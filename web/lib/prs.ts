@@ -25,40 +25,39 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
   },
 ];
 
-export async function fetchLivePRs(): Promise<PR[]> {
-  const results: PR[] = [];
-  for (const pr of PR_CATALOG) {
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/${pr.repo}/pulls/${pr.number}`,
-        {
-          headers: { Accept: "application/vnd.github+json" },
-          next: { revalidate: 300 }, // cache 5 min
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const status: PRStatus = data.merged_at
-          ? "merged"
-          : data.draft
-          ? "draft"
-          : data.state === "closed"
-          ? "closed"
-          : "open";
-        results.push({
-          ...pr,
-          liveStatus: status,
-          liveTitle: data.title,
-          mergedAt: data.merged_at,
-          closedAt: data.closed_at,
-          url: data.html_url,
-        });
-      } else {
-        results.push({ ...pr, liveStatus: "open" });
-      }
-    } catch {
-      results.push({ ...pr, liveStatus: "open" });
+async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
+  const token = process.env.GITHUB_TOKEN;
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${pr.repo}/pulls/${pr.number}`,
+      { headers, next: { revalidate: 300 } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const status: PRStatus = data.merged_at
+        ? "merged"
+        : data.draft
+        ? "draft"
+        : data.state === "closed"
+        ? "closed"
+        : "open";
+      return {
+        ...pr,
+        liveStatus: status,
+        liveTitle: data.title as string,
+        mergedAt: data.merged_at as string | null,
+        closedAt: data.closed_at as string | null,
+        url: data.html_url as string,
+      };
     }
+    return { ...pr, liveStatus: "open" };
+  } catch {
+    return { ...pr, liveStatus: "open" };
   }
-  return results;
+}
+
+export async function fetchLivePRs(): Promise<PR[]> {
+  return Promise.all(PR_CATALOG.map(fetchOnePR));
 }

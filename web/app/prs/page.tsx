@@ -103,7 +103,12 @@ export default async function PRsBoard() {
         {/* Header */}
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#1f2328] mb-1">PRs</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-3xl font-bold text-[#1f2328]">PRs</h1>
+              <a href="/discover" className="text-[13px] text-blue-600 hover:underline">
+                Discover &rarr;
+              </a>
+            </div>
             <div className="text-[13px] text-gray-500">
               {total} tracked &middot; live from GitHub API &middot; {acceptanceRate}% acceptance
             </div>
