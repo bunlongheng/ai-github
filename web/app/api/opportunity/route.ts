@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const STATE_FILE = join(process.cwd(), "data/state.json");
+const STATE_FILE = join(process.cwd(), "data/pipeline.json");
 
 function readState() {
   if (!existsSync(STATE_FILE)) return null;

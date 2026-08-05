@@ -30,7 +30,7 @@ interface State {
 }
 
 function loadState(): State {
-  const file = join(process.cwd(), "data/state.json");
+  const file = join(process.cwd(), "data/pipeline.json");
   if (!existsSync(file)) {
     return { last_scan: "", favorites: [], repos_checked: {}, submitted_prs: [], opportunities: [] };
   }

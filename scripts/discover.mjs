@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Hourly PR opportunity discovery - reads/writes web/data/state.json
+// Hourly PR opportunity discovery - reads/writes web/data/pipeline.json
 
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const STATE_FILE = join(ROOT, "web/data/state.json");
+const STATE_FILE = join(ROOT, "web/data/pipeline.json");
 
 const SEED_REPOS = [
   "marimo-team/marimo",
