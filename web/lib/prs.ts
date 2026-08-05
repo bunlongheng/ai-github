@@ -23,6 +23,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "#9624",
     submittedAt: "2026-08-05",
   },
+  {
+    number: 3578,
+    repo: "openai/openai-python",
+    title: "fix: remove duplicate accumulate_delta in assistants streaming",
+    issue: "architect-audit",
+    submittedAt: "2026-08-05",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {

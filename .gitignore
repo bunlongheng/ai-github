@@ -5,3 +5,4 @@ dist/
 .next/
 marimo/
 web/data/
+openai-python/
