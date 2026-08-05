@@ -30,6 +30,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "architect-audit",
     submittedAt: "2026-08-05",
   },
+  {
+    number: 3579,
+    repo: "openai/openai-python",
+    title: "fix: expand SENSITIVE_HEADERS to cover proxy and gateway credential headers",
+    issue: "security-audit",
+    submittedAt: "2026-08-05",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
