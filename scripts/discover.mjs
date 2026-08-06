@@ -107,6 +107,17 @@ const CAMBODIA_DEVS = [
   { login: "socheatsok78",reason: "location: Cambodia, 315 followers, FOSS / infrastructure" },
 ];
 
+// Owner's favorite maintainers to track - audit, scan, and collaborate with.
+// Both their personal account AND any org they run are scanned. NOTE: some of
+// these (steipete core apps, karpathy educational repos) rarely merge external
+// PRs; their COMMUNITY/tooling repos (openclaw/crabbox, /docs, /crabpot,
+// steipete/agent-scripts) DO accept external PRs - target those.
+const FAVORITE_DEVS = [
+  { login: "steipete", org: "openclaw", reason: "Peter Steinberger - Clawdfather @OpenClaw, ex-PSPDFKit; community repos (crabbox/docs/crabpot) merge external PRs, core apps do not" },
+  { login: "karpathy", reason: "Andrej Karpathy - deep learning; mostly educational repos, low external-merge rate - scan but temper expectations" },
+  { login: "bcherny",  reason: "Boris Cherny - Claude Code @ Anthropic" },
+];
+
 function gh(args) {
   try {
     const out = execSync(`gh ${args}`, {
@@ -193,6 +204,35 @@ function detectEffort(title) {
   if (/typo|missing|update.*doc|add.*test|example|rename/.test(t)) return "low";
   if (/refactor|rewrite|redesign|migrate/.test(t)) return "high";
   return "medium";
+}
+
+// Discover repos from the owner's favorite maintainers (personal + their org),
+// refreshed weekly. Prefers repos that actually merge external PRs.
+async function discoverFavoriteRepos(state) {
+  const lastScan = state.favorite_last_scan;
+  if (lastScan && ageDays(lastScan) < 7) {
+    return state.favorite_repos || [];
+  }
+  console.log("  [favorites] scanning favorite maintainers...");
+  const favRepos = [];
+  for (const dev of FAVORITE_DEVS) {
+    const accounts = [dev.login, ...(dev.org ? [dev.org] : [])];
+    for (const acct of accounts) {
+      const repos =
+        gh(`api "users/${acct}/repos?sort=pushed&per_page=15&type=public"`) ||
+        gh(`api "orgs/${acct}/repos?sort=pushed&per_page=15&type=public"`);
+      if (!repos) continue;
+      for (const repo of repos) {
+        if (repo.fork || repo.archived || repo.stargazers_count < 5) continue;
+        if (favRepos.find((r) => r.full_name === repo.full_name)) continue;
+        favRepos.push({ full_name: repo.full_name, stars: repo.stargazers_count, why: dev.reason });
+      }
+    }
+  }
+  state.favorite_repos = favRepos;
+  state.favorite_last_scan = new Date().toISOString();
+  console.log(`  [favorites] ${favRepos.length} repos from favorite maintainers`);
+  return favRepos;
 }
 
 // Discover top repos from Cambodian community devs and refresh weekly
@@ -504,17 +544,24 @@ async function main() {
     searchReposJS = JSON.parse(raw).map((r) => r.nameWithOwner);
   } catch {}
 
+  // Discover favorite-maintainer repos (Peter/openclaw, Karpathy, Boris Cherny)
+  const favoriteRepos = await discoverFavoriteRepos(state);
+  const favoriteWhyMap = Object.fromEntries(
+    favoriteRepos.map((r) => [r.full_name, r.why])
+  );
+
   // Discover Cambodian community repos
   const cambodiaRepos = await discoverCambodianRepos(state);
   const cambodiaWhyMap = Object.fromEntries(
     cambodiaRepos.map((r) => [r.full_name, r.why])
   );
 
-  // Priority order: favorites, seeds, cambodia community, search results (deduped)
+  // Priority order: favorites, favorite-maintainer repos, seeds, cambodia, search (deduped)
   const seen = new Set();
   const toCheck = [];
   for (const r of [
     ...state.favorites,
+    ...favoriteRepos.map((r) => r.full_name),
     ...SEED_REPOS,
     ...cambodiaRepos.map((r) => r.full_name),
     ...searchRepos,
@@ -529,11 +576,11 @@ async function main() {
   }
 
   const cambodiaCount = cambodiaRepos.length;
-  console.log(`Checking ${toCheck.length} repos (favorites first, ${cambodiaCount} cambodia community)`);
+  console.log(`Checking ${toCheck.length} repos (favorites first, ${favoriteRepos.length} favorite-maintainer, ${cambodiaCount} cambodia community)`);
 
   for (const repo of toCheck) {
     try {
-      await checkRepo(repo, state, cambodiaWhyMap[repo] || null);
+      await checkRepo(repo, state, favoriteWhyMap[repo] || cambodiaWhyMap[repo] || null);
     } catch (e) {
       console.log(`  error checking ${repo}: ${e.message}`);
     }
