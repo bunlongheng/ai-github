@@ -173,6 +173,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 7620,
+    repo: "recharts/recharts",
+    title: "fix: guard reduceCSSCalc against ReDoS from pathological calc() input",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
