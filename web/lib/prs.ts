@@ -222,6 +222,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "CVE-2026-13697",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 960,
+    repo: "openclaw/gogcli",
+    title: "fix(gmail): redact embedded credentials in watch hook URL output",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
