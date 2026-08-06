@@ -114,6 +114,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "#900",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 828,
+    repo: "simonw/sqlite-utils",
+    title: "Escape tokenize argument in enable_fts to prevent SQL injection",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
