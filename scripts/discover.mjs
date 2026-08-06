@@ -379,7 +379,8 @@ async function checkRepo(repo, state, cambodiaWhy) {
 
 // Bot accounts / advisory-noise owners that spam auto-generated "security"
 // issues we can never PR against. Skip them in the fresh-security sweep.
-const SECURITY_NOISE = /argus|aishield|cve-checker|-nightly|leekiyoon|kovagent/i;
+const SECURITY_NOISE =
+  /argus|aishield|cve-checker|-nightly|leekiyoon|kovagent|mythrax|securitybot|security-bot|dependabot|snyk/i;
 
 // Search GitHub for fresh, unassigned, uncommented security issues across all
 // repos (not just the seed list). Security fixes get merged fastest, so an
@@ -406,8 +407,13 @@ async function sweepFreshSecurity(state) {
   for (const it of items) {
     // repository_url ends in .../owner/name
     const parts = it.repository_url.split("/");
-    const repo = `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+    const owner = parts[parts.length - 2];
+    const repo = `${owner}/${parts[parts.length - 1]}`;
     if (SECURITY_NOISE.test(repo) || SECURITY_NOISE.test(it.user?.login || "")) continue;
+    if (SECURITY_NOISE.test(it.title || "")) continue;
+    // Skip owner-self-authored issues: on personal repos these are the owner's
+    // own security to-do list (they fix them themselves) - not PR targets.
+    if ((it.user?.login || "").toLowerCase() === owner.toLowerCase()) continue;
     // Skip repos we've already submitted to (1 PR per repo)
     if (state.submitted_prs.some((p) => p.repo === repo)) continue;
     const id = `${repo}#${it.number}`;
