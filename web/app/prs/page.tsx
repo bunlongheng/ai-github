@@ -211,42 +211,63 @@ export default async function PRsBoard() {
                         : g.status === "closed"
                         ? closedAgo
                         : submittedAgo;
+                    const prUrl = pr.url || `https://github.com/${pr.repo}/pull/${pr.number}`;
+                    const repoUrl = `https://github.com/${pr.repo}`;
+                    const issueMatch = /^#(\d+)$/.exec(pr.issue || "");
+                    const issueUrl = issueMatch
+                      ? `https://github.com/${pr.repo}/issues/${issueMatch[1]}`
+                      : null;
 
                     return (
                       <tr
                         key={`${pr.repo}-${pr.number}`}
-                        className={`border-t border-gray-100 cursor-pointer transition-colors ${HOVER[g.status]}`}
+                        className={`border-t border-gray-100 transition-colors ${HOVER[g.status]}`}
                       >
                         {/* Repo */}
                         <td className="pl-3 pr-1 py-2">
-                          <span className="flex items-center gap-1.5 min-w-0">
+                          <a
+                            href={repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={pr.repo}
+                            className="flex items-center gap-1.5 min-w-0 no-underline hover:underline"
+                          >
                             <OrgAvatar org={org} />
                             <span className="truncate text-[#1f2328]">{repoName}</span>
-                          </span>
+                          </a>
                         </td>
 
                         {/* Title */}
                         <td className="px-2.5 py-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="flex-1 min-w-0 truncate text-[#1f2328]">
+                          <a
+                            href={prUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`PR #${pr.number}`}
+                            className="flex items-center gap-1.5 min-w-0 no-underline group"
+                          >
+                            <span className="flex-1 min-w-0 truncate text-[#1f2328] group-hover:text-blue-700 group-hover:underline">
                               {displayTitle}
                             </span>
-                            {pr.url ? (
-                              <a
-                                href={pr.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title={`PR #${pr.number}`}
-                                className="shrink-0 text-blue-700 no-underline align-middle"
-                              >
-                                &#8599;
-                              </a>
-                            ) : null}
-                          </div>
+                            <span className="shrink-0 text-blue-700 align-middle">&#8599;</span>
+                          </a>
                         </td>
 
                         {/* Issue */}
-                        <td className="px-1.5 py-2 text-gray-500 text-[11px]">{pr.issue}</td>
+                        <td className="px-1.5 py-2 text-[11px]">
+                          {issueUrl ? (
+                            <a
+                              href={issueUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-700 no-underline hover:underline"
+                            >
+                              {pr.issue}
+                            </a>
+                          ) : (
+                            <span className="text-gray-500">{pr.issue}</span>
+                          )}
+                        </td>
 
                         {/* Submitted */}
                         <td className="px-1.5 py-2 text-gray-500 text-[11px] whitespace-nowrap">

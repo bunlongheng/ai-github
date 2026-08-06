@@ -328,6 +328,10 @@ async function checkRepo(repo, state, cambodiaWhy) {
     const id = `${repo}#${issue.number}`;
     if (state.opportunities.some((o) => o.id === id)) continue;
 
+    // Defense in depth: drop bot-advisory / noise issues here too, not just in
+    // the fresh-security sweep.
+    if (SECURITY_NOISE.test(repo) || SECURITY_NOISE.test(issue.title || "")) continue;
+
     // Competing PR check: does any open PR mention this issue number?
     const refPattern = new RegExp(`#${issue.number}\\b`);
     const hasCompeting = refPattern.test(openPRText);
