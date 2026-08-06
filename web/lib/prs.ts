@@ -250,6 +250,20 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 493,
+    repo: "openclaw/acpx",
+    title: "fix(security): contain replay viewer bundle projection paths",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
+  {
+    number: 359,
+    repo: "steipete/oracle",
+    title: "fix(security): restrict session artifact file permissions to owner-only",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
