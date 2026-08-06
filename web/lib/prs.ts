@@ -180,6 +180,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 7,
+    repo: "seanghay/sone",
+    title: "fix: clamp SVG rasterization size to prevent memory-exhaustion DoS",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
