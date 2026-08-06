@@ -201,6 +201,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "#1248",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 3849,
+    repo: "garrytan/gbrain",
+    title: "fix(serve-http): default-deny OAuth CORS preflight on /token, /revoke, /register",
+    issue: "#3845",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
