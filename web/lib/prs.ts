@@ -215,6 +215,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 28220,
+    repo: "open-webui/open-webui",
+    title: "build: bump undici to ^7.29.0 to fix CVE-2026-13697 and 4 related CVEs",
+    issue: "CVE-2026-13697",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
