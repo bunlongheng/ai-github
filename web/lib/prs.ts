@@ -194,6 +194,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 1253,
+    repo: "openclaw/crabbox",
+    title: "fix(sync): report actionable error for non-Git workdir",
+    issue: "#1248",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
