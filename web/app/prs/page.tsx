@@ -20,12 +20,59 @@ const CAT_LABEL: Record<PRCategory, string> = {
   enhancement: "Enhancement",
 };
 
+// Inline monochrome icons (inherit currentColor) - no icon dependency, matches
+// the clean board aesthetic. Lucide-style stroke paths.
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  const p = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2.2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className,
+  };
+  switch (name) {
+    case "security": // shield
+      return <svg {...p}><path d="M12 2l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V5l8-3z" /></svg>;
+    case "correctness": // check-circle
+      return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-6" /></svg>;
+    case "performance": // bolt
+      return <svg {...p}><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" /></svg>;
+    case "feature": // sparkle
+      return <svg {...p}><path d="M12 2l2.4 6.3L21 11l-6.6 2.7L12 20l-2.4-6.3L3 11l6.6-2.7z" /></svg>;
+    case "enhancement": // wand
+      return <svg {...p}><path d="M3 21l7-7M13 4l7 7M14 3l3-1 2 2-1 3M9 8l7 7" /></svg>;
+    case "total": // layers
+      return <svg {...p}><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5" /></svg>;
+    case "open": // pull-request
+      return <svg {...p}><circle cx="7" cy="6" r="2.3" /><circle cx="7" cy="18" r="2.3" /><path d="M7 8.3v7.4M17 8v8" /><circle cx="17" cy="6" r="2.3" /></svg>;
+    case "merged": // git-merge
+      return <svg {...p}><circle cx="7" cy="6" r="2.3" /><circle cx="7" cy="18" r="2.3" /><path d="M7 8.3v7.4" /><circle cx="17" cy="8" r="2.3" /><path d="M17 10.3c0 4-4 4.5-7 5.4" /></svg>;
+    case "closed": // x-circle
+      return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" /></svg>;
+    case "draft": // pencil
+      return <svg {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2 2 0 013 3L7 19l-4 1 1-4z" /></svg>;
+    default:
+      return null;
+  }
+}
+
+const CAT_ICON: Record<PRCategory, string> = {
+  security: "security",
+  correctness: "correctness",
+  performance: "performance",
+  feature: "feature",
+  enhancement: "enhancement",
+};
+
 function categoryChip(cat?: PRCategory) {
   if (!cat) return null;
   return (
     <span
-      className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap ${CAT_CLS[cat]}`}
+      className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap ${CAT_CLS[cat]}`}
     >
+      <Icon name={CAT_ICON[cat]} className="w-2.5 h-2.5 shrink-0" />
       {CAT_LABEL[cat]}
     </span>
   );
@@ -172,15 +219,17 @@ export default async function PRsBoard() {
 
         {/* Summary tiles */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <div className="flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r from-gray-700 to-gray-900">
+          <div className="relative flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r from-gray-700 to-gray-900">
+            <Icon name="total" className="w-4 h-4 absolute top-2 right-2 text-white/40" />
             <div className="text-[20px] sm:text-[26px] font-bold leading-none">{total}</div>
             <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">Total</div>
           </div>
           {(["open", "draft", "merged", "closed"] as PRStatus[]).filter((s) => counts[s] > 0).map((s) => (
             <div
               key={s}
-              className={`flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r ${HGRAD[s]}`}
+              className={`relative flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r ${HGRAD[s]}`}
             >
+              <Icon name={s} className="w-4 h-4 absolute top-2 right-2 text-white/40" />
               <div className="text-[20px] sm:text-[26px] font-bold leading-none">{counts[s]}</div>
               <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">
                 {s === "closed" ? "Rejected" : STATUS_LABEL[s]}
