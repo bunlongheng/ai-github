@@ -208,6 +208,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "#3845",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 7460,
+    repo: "trpc/trpc",
+    title: "fix(server): reject line breaks and null chars in tracked() SSE ids",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
