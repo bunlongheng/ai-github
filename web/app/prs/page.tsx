@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { fetchLivePRs } from "@/lib/prs";
 import type { PRStatus, PRCategory } from "@/lib/prs";
 
@@ -35,12 +36,22 @@ const GRAD_COLORS = ["#0969da", "#8250df", "#bf3989", "#1a7f37", "#9a6700", "#1b
 function OrgAvatar({ org }: { org: string }) {
   const init = (org || "?").slice(0, 1).toUpperCase();
   const bg = GRAD_COLORS[[...org].reduce((a, c) => a + c.charCodeAt(0), 0) % GRAD_COLORS.length];
+  // Show the org's GitHub avatar (its real icon/logo); the colored monogram
+  // sits behind as the generic fallback if the image is missing/slow.
   return (
     <span
-      className="inline-flex items-center justify-center rounded-[5px] align-middle text-white text-[12px] font-bold shrink-0"
+      className="relative inline-flex items-center justify-center rounded-[5px] align-middle text-white text-[12px] font-bold shrink-0 overflow-hidden"
       style={{ width: 20, height: 20, background: bg }}
     >
       {init}
+      <Image
+        src={`https://github.com/${org}.png?size=40`}
+        alt={org}
+        width={20}
+        height={20}
+        unoptimized
+        className="absolute inset-0 h-full w-full object-cover"
+      />
     </span>
   );
 }
@@ -128,9 +139,13 @@ export default async function PRsBoard() {
       ? Math.round((mergedCount / (mergedCount + closedCount)) * 100)
       : 0;
 
+  // Latest PR on top: newest submittedAt first, then highest PR number.
+  const byNewest = (a: { submittedAt: string; number: number }, b: { submittedAt: string; number: number }) =>
+    b.submittedAt.localeCompare(a.submittedAt) || b.number - a.number;
+
   const groups = GROUP_ORDER.map((status) => ({
     status,
-    rows: prs.filter((pr) => (pr.liveStatus ?? "open") === status),
+    rows: prs.filter((pr) => (pr.liveStatus ?? "open") === status).sort(byNewest),
   })).filter((g) => g.rows.length > 0);
 
   return (
