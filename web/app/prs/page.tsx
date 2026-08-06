@@ -1,7 +1,34 @@
 import { fetchLivePRs } from "@/lib/prs";
-import type { PRStatus } from "@/lib/prs";
+import type { PRStatus, PRCategory } from "@/lib/prs";
 
 export const dynamic = "force-dynamic";
+
+const CAT_CLS: Record<PRCategory, string> = {
+  security: "bg-red-50 text-red-700 border border-red-200",
+  correctness: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  performance: "bg-amber-50 text-amber-700 border border-amber-200",
+  feature: "bg-teal-50 text-teal-700 border border-teal-200",
+  enhancement: "bg-gray-100 text-gray-600 border border-gray-200",
+};
+
+const CAT_LABEL: Record<PRCategory, string> = {
+  security: "Security",
+  correctness: "Correctness",
+  performance: "Performance",
+  feature: "Feature",
+  enhancement: "Enhancement",
+};
+
+function categoryChip(cat?: PRCategory) {
+  if (!cat) return null;
+  return (
+    <span
+      className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap ${CAT_CLS[cat]}`}
+    >
+      {CAT_LABEL[cat]}
+    </span>
+  );
+}
 
 const GRAD_COLORS = ["#0969da", "#8250df", "#bf3989", "#1a7f37", "#9a6700", "#1b9aaa"];
 
@@ -86,6 +113,13 @@ export default async function PRsBoard() {
     counts[s] = (counts[s] || 0) + 1;
   }
 
+  const catCounts = prs.reduce((m, pr) => {
+    const c = pr.category;
+    if (c) m[c] = (m[c] || 0) + 1;
+    return m;
+  }, {} as Record<PRCategory, number>);
+  const catOrder: PRCategory[] = ["security", "correctness", "performance", "feature", "enhancement"];
+
   const total = prs.length;
   const mergedCount = counts.merged;
   const closedCount = counts.closed;
@@ -137,6 +171,17 @@ export default async function PRsBoard() {
                 {s === "closed" ? "Rejected" : STATUS_LABEL[s]}
               </div>
             </div>
+          ))}
+        </div>
+
+        {/* Category mix */}
+        <div className="flex flex-wrap items-center gap-2 mb-6 -mt-2">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">By category</span>
+          {catOrder.filter((c) => catCounts[c] > 0).map((c) => (
+            <span key={c} className="inline-flex items-center gap-1">
+              {categoryChip(c)}
+              <span className="text-[12px] font-bold text-gray-600">{catCounts[c]}</span>
+            </span>
           ))}
         </div>
 
@@ -246,6 +291,7 @@ export default async function PRsBoard() {
                             title={`PR #${pr.number}`}
                             className="flex items-center gap-1.5 min-w-0 no-underline group"
                           >
+                            {categoryChip(pr.category)}
                             <span className="flex-1 min-w-0 truncate text-[#1f2328] group-hover:text-blue-700 group-hover:underline">
                               {displayTitle}
                             </span>

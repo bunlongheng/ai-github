@@ -1,17 +1,55 @@
 export type PRStatus = "draft" | "open" | "merged" | "closed";
 
+export type PRCategory =
+  | "security"
+  | "correctness"
+  | "performance"
+  | "feature"
+  | "enhancement";
+
 export interface PR {
   number: number;
   repo: string;        // "marimo-team/marimo"
   title: string;       // our intended title (for reference)
   issue: string;       // "#9624"
   submittedAt: string; // "2026-08-05"
+  category?: PRCategory;
   // fetched live:
   liveStatus?: PRStatus;
   liveTitle?: string;
   mergedAt?: string | null;
   closedAt?: string | null;
   url?: string;
+}
+
+// Explicit category for known PRs (authoritative). Loop-added PRs not listed
+// here fall back to inferCategory() below.
+const PR_CATEGORY: Record<number, PRCategory> = {
+  3579: "security",   // openai-python: expand SENSITIVE_HEADERS
+  828: "security",    // sqlite-utils: SQL injection escape
+  1005: "security",   // glow: HTTP timeout / DoS
+  2507: "security",   // instructor: request timeouts / DoS
+  35965: "feature",   // litellm: track Google Maps grounding cost
+  11413: "enhancement", // shadcn: remove unused default fonts
+};
+
+// Fallback categorizer for PRs not in PR_CATEGORY (keeps the board correct as
+// the loop adds new entries).
+export function inferCategory(pr: { title: string; issue: string }): PRCategory {
+  const t = (pr.title || "").toLowerCase();
+  if (
+    pr.issue === "security-audit" ||
+    /\binject|traversal|ssrf|xss|csrf|secret|credential|token|sanitiz|escape|vuln|cve|auth bypass|arbitrary|overflow|redos|\bdos\b|timeout/.test(t)
+  )
+    return "security";
+  if (/\bperf|slow|memory|leak|optim|latency|twice|duplicate\b/.test(t)) return "performance";
+  if (/\bfeat|add |support |track |implement /.test(t)) return "feature";
+  if (/\bremove|unused|cleanup|rename|refactor|deprecat/.test(t)) return "enhancement";
+  return "correctness";
+}
+
+export function categoryOf(pr: { number: number; title: string; issue: string }): PRCategory {
+  return PR_CATEGORY[pr.number] ?? inferCategory(pr);
 }
 
 // The catalog - add new PRs here when submitted
@@ -171,5 +209,6 @@ async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" |
 }
 
 export async function fetchLivePRs(): Promise<PR[]> {
-  return Promise.all(PR_CATALOG.map(fetchOnePR));
+  const prs = await Promise.all(PR_CATALOG.map(fetchOnePR));
+  return prs.map((p) => ({ ...p, category: categoryOf(p) }));
 }
