@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3018",
+    "dev": "next dev -p 3018 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 3018",
+    "start": "next start -p 3018 -H 0.0.0.0",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "^16.3.0",
