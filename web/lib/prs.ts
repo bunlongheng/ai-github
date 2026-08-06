@@ -229,6 +229,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 2468,
+    repo: "garrytan/gstack",
+    title: "fix(design): create OpenAI key file owner-only to close write-then-chmod race",
+    issue: "security-audit",
+    submittedAt: "2026-08-06",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
