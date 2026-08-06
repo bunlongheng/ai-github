@@ -6,3 +6,16 @@ dist/
 marimo/
 web/data/
 openai-python/
+starter_architecture_flutter_firebase/
+sone/
+click/
+httpx/
+bubbletea/
+lipgloss/
+datasette/
+sqlite-utils/
+cli/
+# Next.js generated agent files + build info (re-created by next dev)
+web/AGENTS.md
+web/CLAUDE.md
+web/tsconfig.tsbuildinfo

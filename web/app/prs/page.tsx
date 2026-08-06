@@ -21,8 +21,15 @@ function OrgAvatar({ org }: { org: string }) {
 const HGRAD: Record<PRStatus, string> = {
   open: "from-blue-600 to-blue-800",
   merged: "from-green-600 to-emerald-700",
-  draft: "from-gray-400 to-gray-500",
-  closed: "from-rose-300 to-rose-400",
+  draft: "from-gray-400 to-gray-600",
+  closed: "from-rose-500 to-rose-700",
+};
+
+const HOVER: Record<PRStatus, string> = {
+  open: "hover:bg-blue-50",
+  merged: "hover:bg-green-50",
+  draft: "hover:bg-gray-50",
+  closed: "hover:bg-rose-50",
 };
 
 const PILL_CLS: Record<PRStatus, string> = {
@@ -41,12 +48,18 @@ const STATUS_LABEL: Record<PRStatus, string> = {
 
 const GROUP_ORDER: PRStatus[] = ["open", "merged", "draft", "closed"];
 
-function statusPill(status: PRStatus) {
+function statusPill(status: PRStatus, agoSlot?: string) {
   return (
-    <span
-      className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 ${PILL_CLS[status]}`}
-    >
-      {STATUS_LABEL[status]}
+    <span className="inline-flex items-center gap-1">
+      <span
+        className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 text-center ${PILL_CLS[status]}`}
+        style={{ width: 52, display: "inline-block" }}
+      >
+        {STATUS_LABEL[status]}
+      </span>
+      <span className="text-[10px] text-gray-400" style={{ width: 46, display: "inline-block" }}>
+        {agoSlot ?? ""}
+      </span>
     </span>
   );
 }
@@ -86,14 +99,6 @@ export default async function PRsBoard() {
     rows: prs.filter((pr) => (pr.liveStatus ?? "open") === status),
   })).filter((g) => g.rows.length > 0);
 
-  const summaryTiles: { label: string; count: number; grad: string }[] = [
-    { label: "Total", count: total, grad: "from-gray-700 to-gray-900" },
-    ...(counts.open > 0 ? [{ label: "Open", count: counts.open, grad: HGRAD.open }] : []),
-    ...(counts.draft > 0 ? [{ label: "Draft", count: counts.draft, grad: HGRAD.draft }] : []),
-    ...(counts.merged > 0 ? [{ label: "Merged", count: counts.merged, grad: HGRAD.merged }] : []),
-    ...(counts.closed > 0 ? [{ label: "Rejected", count: counts.closed, grad: HGRAD.closed }] : []),
-  ];
-
   return (
     <main
       className="min-h-screen bg-[#f6f8fa] text-[#1f2328]"
@@ -110,126 +115,162 @@ export default async function PRsBoard() {
               </a>
             </div>
             <div className="text-[13px] text-gray-500">
-              {total} tracked &middot; live from GitHub API &middot; {acceptanceRate}% acceptance
+              {total} tracked &middot; live from GitHub API &middot;{" "}
+              {mergedCount + closedCount > 0 ? `${acceptanceRate}% acceptance` : "no resolved yet"}
             </div>
           </div>
         </div>
 
         {/* Summary tiles */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {summaryTiles.map((tile) => (
+          <div className="flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r from-gray-700 to-gray-900">
+            <div className="text-[20px] sm:text-[26px] font-bold leading-none">{total}</div>
+            <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">Total</div>
+          </div>
+          {(["open", "draft", "merged", "closed"] as PRStatus[]).filter((s) => counts[s] > 0).map((s) => (
             <div
-              key={tile.label}
-              className={`flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r ${tile.grad}`}
+              key={s}
+              className={`flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r ${HGRAD[s]}`}
             >
-              <div className="text-[20px] sm:text-[26px] font-bold leading-none">{tile.count}</div>
-              <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">{tile.label}</div>
+              <div className="text-[20px] sm:text-[26px] font-bold leading-none">{counts[s]}</div>
+              <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">
+                {s === "closed" ? "Rejected" : STATUS_LABEL[s]}
+              </div>
             </div>
           ))}
         </div>
 
         {/* Kanban panels */}
-        {groups.map((g) => (
-          <div
-            key={g.status}
-            className="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-          >
-            {/* Panel header */}
+        {groups.map((g) => {
+          // per-repo breakdown for header chips
+          const byOrg = g.rows.reduce((m, r) => {
+            const org = (r.repo || "/").split("/")[0];
+            m[org] = (m[org] || 0) + 1;
+            return m;
+          }, {} as Record<string, number>);
+          const breakdown = Object.entries(byOrg).sort((a, b) => b[1] - a[1]);
+
+          return (
             <div
-              className={`bg-gradient-to-r ${HGRAD[g.status]} px-4 py-2.5 flex items-center gap-2`}
+              key={g.status}
+              className="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
             >
-              <h3 className="text-sm font-bold text-white tracking-wide">
-                {STATUS_LABEL[g.status]}
-              </h3>
-              <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">
-                {g.rows.length}
-              </span>
-            </div>
-
-            {/* Table */}
-            <table className="w-full table-fixed border-collapse text-[11px] sm:text-[13px]">
-              <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "42%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "13%" }} />
-              </colgroup>
-              <thead>
-                <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
-                  <th className="pl-3 pr-1 py-2 font-medium">Repo</th>
-                  <th className="px-2.5 py-2 font-medium">Title</th>
-                  <th className="px-1.5 py-2 font-medium">Issue</th>
-                  <th className="px-1.5 py-2 font-medium">Submitted</th>
-                  <th className="pl-1 pr-3 py-2 font-medium text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.rows.map((pr) => {
-                  const [org, repoName] = (pr.repo || "/").split("/");
-                  const displayTitle = pr.liveTitle || pr.title;
-                  const submittedAgo = agoLabel(`${pr.submittedAt}T00:00:00`);
-                  const dateLabel = formatDate(pr.submittedAt);
-
-                  return (
-                    <tr
-                      key={`${pr.repo}-${pr.number}`}
-                      className="border-t border-gray-100 hover:bg-blue-50 transition-colors"
+              {/* Panel header */}
+              <div
+                className={`bg-gradient-to-r ${HGRAD[g.status]} px-4 py-2.5 flex items-center justify-between gap-2`}
+              >
+                <div className="flex items-center gap-2 shrink-0">
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    {STATUS_LABEL[g.status]}
+                  </h3>
+                  <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">
+                    {g.rows.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {breakdown.map(([org, n]) => (
+                    <span
+                      key={org}
+                      className="inline-flex items-center gap-1 min-w-[40px] text-[11px] font-bold text-white bg-white/20 rounded-full px-2 py-0.5 whitespace-nowrap"
                     >
-                      {/* Repo */}
-                      <td className="pl-3 pr-1 py-2">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <OrgAvatar org={org} />
-                          <span className="truncate text-[#1f2328]">{repoName}</span>
-                        </span>
-                      </td>
+                      <OrgAvatar org={org} />
+                      <span className="text-white/90">{n}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-                      {/* Title */}
-                      <td className="px-2.5 py-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="flex-1 min-w-0 truncate text-[#1f2328]">
-                            {displayTitle}
+              {/* Table */}
+              <table className="w-full table-fixed border-collapse text-[11px] sm:text-[13px]">
+                <colgroup>
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "44%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "11%" }} />
+                  <col style={{ width: "15%" }} />
+                </colgroup>
+                <thead>
+                  <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
+                    <th className="pl-3 pr-1 py-2 font-medium">Repo</th>
+                    <th className="px-2.5 py-2 font-medium">Title</th>
+                    <th className="px-1.5 py-2 font-medium">Issue</th>
+                    <th className="px-1.5 py-2 font-medium">Submitted</th>
+                    <th className="pl-1 pr-3 py-2 font-medium text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {g.rows.map((pr) => {
+                    const [org, repoName] = (pr.repo || "/").split("/");
+                    const displayTitle = pr.liveTitle || pr.title;
+                    const mergedAgo = agoLabel(pr.mergedAt);
+                    const closedAgo = agoLabel(pr.closedAt);
+                    const submittedAgo = agoLabel(`${pr.submittedAt}T00:00:00`);
+                    const agoSlot =
+                      g.status === "merged"
+                        ? mergedAgo
+                        : g.status === "closed"
+                        ? closedAgo
+                        : submittedAgo;
+
+                    return (
+                      <tr
+                        key={`${pr.repo}-${pr.number}`}
+                        className={`border-t border-gray-100 cursor-pointer transition-colors ${HOVER[g.status]}`}
+                      >
+                        {/* Repo */}
+                        <td className="pl-3 pr-1 py-2">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <OrgAvatar org={org} />
+                            <span className="truncate text-[#1f2328]">{repoName}</span>
                           </span>
-                          {pr.url ? (
-                            <a
-                              href={pr.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={`PR #${pr.number}`}
-                              className="shrink-0 text-blue-700 no-underline align-middle"
-                            >
-                              &#8599;
-                            </a>
-                          ) : null}
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Issue */}
-                      <td className="px-1.5 py-2 text-gray-500 text-[11px]">{pr.issue}</td>
+                        {/* Title */}
+                        <td className="px-2.5 py-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="flex-1 min-w-0 truncate text-[#1f2328]">
+                              {displayTitle}
+                            </span>
+                            {pr.url ? (
+                              <a
+                                href={pr.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`PR #${pr.number}`}
+                                className="shrink-0 text-blue-700 no-underline align-middle"
+                              >
+                                &#8599;
+                              </a>
+                            ) : null}
+                          </div>
+                        </td>
 
-                      {/* Submitted */}
-                      <td className="px-1.5 py-2 text-gray-500 text-[11px] whitespace-nowrap">
-                        <span title={pr.submittedAt}>{dateLabel}</span>
-                        {submittedAgo ? (
-                          <span className="ml-1 text-gray-400">({submittedAgo})</span>
-                        ) : null}
-                      </td>
+                        {/* Issue */}
+                        <td className="px-1.5 py-2 text-gray-500 text-[11px]">{pr.issue}</td>
 
-                      {/* Status */}
-                      <td className="pl-1 pr-3 py-2 text-right">{statusPill(g.status)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ))}
+                        {/* Submitted */}
+                        <td className="px-1.5 py-2 text-gray-500 text-[11px] whitespace-nowrap">
+                          {formatDate(pr.submittedAt)}
+                        </td>
 
-        {/* Footer stats */}
+                        {/* Status + ago */}
+                        <td className="pl-1 pr-3 py-2 text-right">
+                          {statusPill(g.status, agoSlot)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+
+        {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-400">
           PRs &middot; live from GitHub API &middot; localhost:3018 &middot;{" "}
           {mergedCount + closedCount > 0
-            ? `${mergedCount} merged / ${mergedCount + closedCount} resolved = ${acceptanceRate}% success rate`
+            ? `${mergedCount} merged / ${mergedCount + closedCount} resolved = ${acceptanceRate}% success`
             : "no resolved PRs yet"}
         </div>
       </div>

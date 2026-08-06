@@ -19,6 +19,15 @@ interface Opportunity {
   found_at: string;
   age_days: number;
   is_favorite: boolean;
+  cambodia_community?: boolean;
+  cambodia_why?: string;
+}
+
+interface CambodiaRepo {
+  full_name: string;
+  stars: number;
+  owner: string;
+  why: string;
 }
 
 interface State {
@@ -27,6 +36,8 @@ interface State {
   repos_checked: Record<string, { last_checked: string; vitality: number; status?: string }>;
   submitted_prs: { repo: string; pr_number: number; issue: string; title: string; submitted_at: string; status: string }[];
   opportunities: Opportunity[];
+  cambodia_repos?: CambodiaRepo[];
+  cambodia_last_scan?: string;
 }
 
 function loadState(): State {
@@ -81,13 +92,15 @@ export default function DiscoverPage() {
   const favs = state.favorites;
 
   const highConf = open.filter((o) => o.confidence >= 70);
+  const cambodiaOpps = open.filter((o) => o.cambodia_community);
+  const cambodiaRepos = state.cambodia_repos || [];
 
   const summaryTiles = [
     { label: "Opportunities", count: open.length, grad: "from-blue-600 to-blue-800" },
     { label: "High Conf", count: highConf.length, grad: "from-green-600 to-emerald-700" },
+    { label: "KH Community", count: cambodiaRepos.length, grad: "from-red-500 to-red-700" },
     { label: "Favorites", count: favs.length, grad: "from-purple-600 to-purple-800" },
     { label: "PRs Out", count: submitted.length, grad: "from-gray-600 to-gray-800" },
-    { label: "Repos Scanned", count: reposChecked, grad: "from-slate-600 to-slate-800" },
   ];
 
   return (
@@ -173,6 +186,64 @@ export default function DiscoverPage() {
           </div>
         )}
 
+        {/* Cambodia community radar panel */}
+        {cambodiaRepos.length > 0 && (
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-red-500 to-red-700 px-4 py-2.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white tracking-wide">Cambodian Community Radar</h3>
+                <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">
+                  {cambodiaRepos.length} repos
+                </span>
+                {cambodiaOpps.length > 0 && (
+                  <span className="text-xs font-bold text-white bg-white/20 rounded-full px-2.5 py-0.5">
+                    {cambodiaOpps.length} open opps
+                  </span>
+                )}
+              </div>
+              {state.cambodia_last_scan && (
+                <span className="text-[11px] text-white/70">
+                  updated {timeAgo(state.cambodia_last_scan)}
+                </span>
+              )}
+            </div>
+            <table className="w-full table-fixed border-collapse text-[12px]">
+              <colgroup>
+                <col style={{ width: "32%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "60%" }} />
+              </colgroup>
+              <thead>
+                <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
+                  <th className="pl-3 py-2 font-medium">Repo</th>
+                  <th className="px-2 py-2 font-medium">Stars</th>
+                  <th className="px-2 pr-3 py-2 font-medium">Why Cambodia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cambodiaRepos.map((r) => (
+                  <tr key={r.full_name} className="border-t border-gray-100 hover:bg-red-50 transition-colors">
+                    <td className="pl-3 py-2">
+                      <a
+                        href={`https://github.com/${r.full_name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        {r.full_name}
+                      </a>
+                    </td>
+                    <td className="px-2 py-2 text-gray-600 font-bold">{r.stars}</td>
+                    <td className="px-2 pr-3 py-2 text-gray-500 text-[11px] truncate" title={r.why}>
+                      {r.why}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Opportunities panel */}
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-2.5 flex items-center gap-2">
@@ -237,6 +308,9 @@ export default function DiscoverPage() {
                       <span className="text-gray-400 font-normal ml-0.5 text-[10px]">
                         /{opp.repo.split("/")[0]}
                       </span>
+                      {opp.cambodia_community && (
+                        <span className="ml-1 text-[9px] font-bold uppercase tracking-wide rounded px-1 py-0.5 bg-red-50 text-red-600 border border-red-200" title={opp.cambodia_why}>KH</span>
+                      )}
                     </td>
 
                     {/* Issue */}
