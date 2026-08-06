@@ -116,6 +116,7 @@ const FAVORITE_DEVS = [
   { login: "steipete", org: "openclaw", reason: "Peter Steinberger - Clawdfather @OpenClaw, ex-PSPDFKit; community repos (crabbox/docs/crabpot) merge external PRs, core apps do not" },
   { login: "karpathy", reason: "Andrej Karpathy - deep learning; mostly educational repos, low external-merge rate - scan but temper expectations" },
   { login: "bcherny",  reason: "Boris Cherny - Claude Code @ Anthropic" },
+  { login: "garrytan", reason: "Garry Tan - CEO of Y Combinator; gbrain (20/20 external merged, very active) + gstack accept external PRs - good business/network angle" },
 ];
 
 function gh(args) {
