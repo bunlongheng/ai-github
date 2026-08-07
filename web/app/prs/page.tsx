@@ -163,8 +163,13 @@ function agoLabel(d?: string | null): string {
   if (!d) return "";
   const t = new Date(d).getTime();
   if (Number.isNaN(t)) return "";
-  const days = Math.max(0, Math.floor((Date.now() - t) / 86400000));
-  return days === 0 ? "today" : `${days}d ago`;
+  const ms = Date.now() - t;
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return mins <= 1 ? "just now" : `${mins}m ago`;
+  const hrs = Math.floor(ms / 3600000);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(ms / 86400000);
+  return `${days}d ago`;
 }
 
 function formatDate(d: string): string {
@@ -191,6 +196,16 @@ export default async function PRsBoard() {
   const total = prs.length;
   const mergedCount = counts.merged;
   const closedCount = counts.closed;
+  const lastMergedAgo = (() => {
+    const dates = prs.filter(p => p.mergedAt).map(p => new Date(p.mergedAt!).getTime()).filter(Boolean);
+    if (!dates.length) return "";
+    return agoLabel(new Date(Math.max(...dates)).toISOString());
+  })();
+  const lastRejectedAgo = (() => {
+    const dates = prs.filter(p => p.liveStatus === "closed" && p.closedAt).map(p => new Date(p.closedAt!).getTime()).filter(Boolean);
+    if (!dates.length) return "";
+    return agoLabel(new Date(Math.max(...dates)).toISOString());
+  })();
   const acceptanceRate =
     mergedCount + closedCount > 0
       ? Math.round((mergedCount / (mergedCount + closedCount)) * 100)
@@ -246,12 +261,18 @@ export default async function PRsBoard() {
             <Icon name="merged" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
             <div className="text-[24px] font-bold leading-none">{counts.merged}</div>
             <div className="text-[10px] text-white/80 mt-0.5">Merged</div>
+            {lastMergedAgo && (
+              <div className="text-[9px] text-white/60 mt-0.5">{lastMergedAgo}</div>
+            )}
           </div>
           {/* Rejected */}
           <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-rose-500 to-rose-700">
             <Icon name="closed" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
             <div className="text-[24px] font-bold leading-none">{counts.closed}</div>
             <div className="text-[10px] text-white/80 mt-0.5">Rejected</div>
+            {lastRejectedAgo && (
+              <div className="text-[9px] text-white/60 mt-0.5">{lastRejectedAgo}</div>
+            )}
           </div>
           {/* Draft */}
           <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-gray-400 to-gray-600">
