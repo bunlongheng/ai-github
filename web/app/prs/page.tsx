@@ -251,6 +251,7 @@ export default async function PRsBoard() {
   );
   const highConf = openOpps.filter(o => o.confidence >= 70);
   const favOpps = openOpps.filter(o => o.is_favorite || (pipeline?.favorites ?? []).includes(o.repo));
+  const scannedRepoCount = new Set((pipeline?.opportunities ?? []).map(o => o.repo)).size;
 
   // ── daily activity chart ──
   const today = new Date().toISOString().slice(0, 10);
@@ -320,24 +321,26 @@ export default async function PRsBoard() {
           ))}
         </div>
 
-        {/* ── Pipeline stats ── */}
+        {/* ── Funnel bar ── */}
         {pipeline && (
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-blue-500 to-blue-700">
-              <Icon name="telescope" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
-              <div className="text-[18px] font-bold leading-none">{openOpps.length}</div>
-              <div className="text-[9px] text-white/80 mt-0.5">Opportunities</div>
-            </div>
-            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-emerald-500 to-emerald-700">
-              <Icon name="rate" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
-              <div className="text-[18px] font-bold leading-none">{highConf.length}</div>
-              <div className="text-[9px] text-white/80 mt-0.5">High Confidence</div>
-            </div>
-            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-amber-500 to-orange-600">
-              <Icon name="feature" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
-              <div className="text-[18px] font-bold leading-none">{favOpps.length}</div>
-              <div className="text-[9px] text-white/80 mt-0.5">Favorites</div>
-            </div>
+          <div className="rounded-xl bg-[#1f2328] px-4 py-2.5 mb-6 flex items-center gap-0 overflow-hidden">
+            {([
+              { val: scannedRepoCount, label: "Repos" },
+              { val: openOpps.length,  label: "Opportunities" },
+              { val: highConf.length,  label: "High Conf" },
+              { val: total,            label: "Opened" },
+              { val: mergedCount,      label: "Merged" },
+              { val: closedCount,      label: "Closed" },
+              { val: favOpps.length,   label: "Favorites" },
+            ]).map((item, i) => (
+              <div key={item.label} className="flex items-center">
+                {i > 0 && <span className="text-white/20 text-[11px] mx-3">&#8594;</span>}
+                <div className="flex flex-col items-center min-w-0">
+                  <span className="text-[15px] font-bold text-white leading-none">{item.val}</span>
+                  <span className="text-[8.5px] text-white/40 uppercase tracking-wide mt-0.5 whitespace-nowrap">{item.label}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -414,10 +417,10 @@ export default async function PRsBoard() {
                         </td>
                         <td className="px-2 py-2 overflow-hidden">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            {categoryChip(pr.category)}
                             {issueUrl
                               ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline text-[10px] font-mono shrink-0 whitespace-nowrap">{pr.issue}</a>
-                              : <span className="text-gray-400 text-[10px] truncate whitespace-nowrap">{pr.issue}</span>}
+                              : <span className="text-gray-400 text-[10px] whitespace-nowrap shrink-0">{pr.issue}</span>}
+                            {categoryChip(pr.category)}
                           </div>
                         </td>
                         <td className="pl-2 pr-3 py-2 overflow-hidden">
