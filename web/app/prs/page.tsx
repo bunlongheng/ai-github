@@ -53,6 +53,8 @@ function Icon({ name, className = "" }: { name: string; className?: string }) {
       return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" /></svg>;
     case "draft": // pencil
       return <svg {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2 2 0 013 3L7 19l-4 1 1-4z" /></svg>;
+    case "rate": // shield-check
+      return <svg {...p}><path d="M12 2l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V5l8-3z" /><path d="M9 12l2 2 4-4" /></svg>;
     default:
       return null;
   }
@@ -108,6 +110,14 @@ const HGRAD: Record<PRStatus, string> = {
   merged: "from-green-600 to-emerald-700",
   draft: "from-gray-400 to-gray-600",
   closed: "from-rose-500 to-rose-700",
+};
+
+const CAT_GRAD: Record<PRCategory, string> = {
+  security: "from-red-600 to-rose-800",
+  correctness: "from-indigo-500 to-indigo-700",
+  performance: "from-amber-500 to-orange-600",
+  feature: "from-teal-500 to-teal-700",
+  enhancement: "from-gray-500 to-gray-700",
 };
 
 const HOVER: Record<PRStatus, string> = {
@@ -217,35 +227,59 @@ export default async function PRsBoard() {
           </div>
         </div>
 
-        {/* Summary tiles */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <div className="relative flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r from-gray-700 to-gray-900">
-            <Icon name="total" className="w-4 h-4 absolute top-2 right-2 text-white/40" />
-            <div className="text-[20px] sm:text-[26px] font-bold leading-none">{total}</div>
-            <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">Total</div>
+        {/* Status hero tiles - all 6 always visible */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
+          {/* Total */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-gray-700 to-gray-900">
+            <Icon name="total" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">{total}</div>
+            <div className="text-[10px] text-white/80 mt-0.5">Total</div>
           </div>
-          {(["open", "draft", "merged", "closed"] as PRStatus[]).filter((s) => counts[s] > 0).map((s) => (
-            <div
-              key={s}
-              className={`relative flex-1 min-w-[88px] rounded-[10px] px-2.5 py-2.5 sm:px-4 sm:py-3 text-white shadow-sm bg-gradient-to-r ${HGRAD[s]}`}
-            >
-              <Icon name={s} className="w-4 h-4 absolute top-2 right-2 text-white/40" />
-              <div className="text-[20px] sm:text-[26px] font-bold leading-none">{counts[s]}</div>
-              <div className="text-[10px] sm:text-xs text-white/85 mt-0.5 truncate">
-                {s === "closed" ? "Rejected" : STATUS_LABEL[s]}
-              </div>
+          {/* Open */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-blue-600 to-blue-800">
+            <Icon name="open" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">{counts.open}</div>
+            <div className="text-[10px] text-white/80 mt-0.5">Open</div>
+          </div>
+          {/* Merged */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-green-600 to-emerald-700">
+            <Icon name="merged" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">{counts.merged}</div>
+            <div className="text-[10px] text-white/80 mt-0.5">Merged</div>
+          </div>
+          {/* Rejected */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-rose-500 to-rose-700">
+            <Icon name="closed" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">{counts.closed}</div>
+            <div className="text-[10px] text-white/80 mt-0.5">Rejected</div>
+          </div>
+          {/* Draft */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-gray-400 to-gray-600">
+            <Icon name="draft" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">{counts.draft}</div>
+            <div className="text-[10px] text-white/80 mt-0.5">Draft</div>
+          </div>
+          {/* Acceptance Rate */}
+          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-violet-600 to-purple-800">
+            <Icon name="rate" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
+            <div className="text-[24px] font-bold leading-none">
+              {mergedCount + closedCount > 0 ? `${acceptanceRate}%` : "-"}
             </div>
-          ))}
+            <div className="text-[10px] text-white/80 mt-0.5">Accepted</div>
+          </div>
         </div>
 
-        {/* Category mix */}
-        <div className="flex flex-wrap items-center gap-2 mb-6 -mt-2">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">By category</span>
-          {catOrder.filter((c) => catCounts[c] > 0).map((c) => (
-            <span key={c} className="inline-flex items-center gap-1">
-              {categoryChip(c)}
-              <span className="text-[12px] font-bold text-gray-600">{catCounts[c]}</span>
-            </span>
+        {/* Category mini-tiles - all 5 always visible */}
+        <div className="grid grid-cols-5 gap-2 mb-6">
+          {catOrder.map((c) => (
+            <div
+              key={c}
+              className={`relative rounded-[10px] px-2.5 py-2 text-white shadow-sm bg-gradient-to-br ${CAT_GRAD[c]}`}
+            >
+              <Icon name={CAT_ICON[c]} className="w-3 h-3 absolute top-1.5 right-1.5 text-white/40" />
+              <div className="text-[20px] font-bold leading-none">{catCounts[c] || 0}</div>
+              <div className="text-[9px] text-white/80 mt-0.5 truncate">{CAT_LABEL[c]}</div>
+            </div>
           ))}
         </div>
 
