@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { fetchLivePRs, PR_CATALOG } from "@/lib/prs";
-import type { PRStatus, PRCategory } from "@/lib/prs";
+import { fetchLivePRs, PR_CATALOG, categoryOf } from "@/lib/prs";
+import type { PRStatus, PRCategory, RepoType } from "@/lib/prs";
 import OpportunityActions from "../discover/Actions";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +76,12 @@ function Icon({ name, className = "" }: { name: string; className?: string }) {
     case "rate": return <svg {...p}><path d="M12 2l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V5l8-3z" /><path d="M9 12l2 2 4-4" /></svg>;
     case "pipeline": return <svg {...p}><path d="M3 6h18M3 12h18M3 18h18" /></svg>;
     case "telescope": return <svg {...p}><path d="M10 10L4.5 5.5M18.5 2.5l-14 14M14 14l5.5 5.5M7 17l3-3" /><circle cx="10" cy="10" r="3" /></svg>;
+    case "game": return <svg {...p}><rect x="2" y="6" width="20" height="12" rx="3" /><path d="M6 12h4M8 10v4M15 11h2M15 13h2" /></svg>;
+    case "ai": return <svg {...p}><path d="M12 2a4 4 0 014 4v1h1a3 3 0 010 6h-1v1a4 4 0 01-8 0v-1H7a3 3 0 010-6h1V6a4 4 0 014-4z" /><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none" /></svg>;
+    case "lib": return <svg {...p}><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>;
+    case "app": return <svg {...p}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>;
+    case "tool": return <svg {...p}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a8 8 0 01-10.7 10.7l-6 6a2.12 2.12 0 01-3-3l6-6A8 8 0 0114.7 6.3z" /></svg>;
+    case "api": return <svg {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><path d="M7 8h2l1 2 2-4 1 2h2" /></svg>;
     default: return null;
   }
 }
@@ -85,11 +91,39 @@ const CAT_ICON: Record<PRCategory, string> = {
   feature: "feature", enhancement: "enhancement",
 };
 
+const TYPE_CLS: Record<RepoType, string> = {
+  game: "bg-purple-50 text-purple-700 border border-purple-200",
+  ai:   "bg-orange-50 text-orange-700 border border-orange-200",
+  lib:  "bg-sky-50 text-sky-700 border border-sky-200",
+  app:  "bg-teal-50 text-teal-700 border border-teal-200",
+  tool: "bg-slate-100 text-slate-600 border border-slate-200",
+  api:  "bg-indigo-50 text-indigo-700 border border-indigo-200",
+};
+
+const TYPE_ICON_CLS: Record<RepoType, string> = {
+  game: "text-purple-400", ai: "text-orange-400", lib: "text-sky-400",
+  app: "text-teal-400", tool: "text-slate-400", api: "text-indigo-400",
+};
+
+const TYPE_LABEL: Record<RepoType, string> = {
+  game: "Game", ai: "AI", lib: "Library", app: "App", tool: "Tool", api: "API",
+};
+
+function repoTypeChip(t?: RepoType) {
+  if (!t) return null;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap ${TYPE_CLS[t]}`}>
+      <Icon name={t} className="w-2.5 h-2.5 shrink-0" />
+      {TYPE_LABEL[t]}
+    </span>
+  );
+}
+
 function categoryChip(cat?: PRCategory) {
   if (!cat) return null;
   return (
-    <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap ${CAT_CLS[cat]}`}>
-      <Icon name={CAT_ICON[cat]} className="w-2.5 h-2.5 shrink-0" />
+    <span className={`inline-flex items-center gap-0.5 text-[8.5px] font-bold uppercase tracking-wide rounded px-1 py-0.5 whitespace-nowrap ${CAT_CLS[cat]}`}>
+      <Icon name={CAT_ICON[cat]} className="w-2 h-2 shrink-0" />
       {CAT_LABEL[cat]}
     </span>
   );
@@ -123,7 +157,8 @@ function agoLabel(d?: string | null): string {
   if (mins < 60) return mins <= 1 ? "just now" : `${mins}m ago`;
   const hrs = Math.floor(ms / 3600000);
   if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(ms / 86400000)}d ago`;
+  const days = Math.floor(ms / 86400000);
+  return days === 0 ? "today" : `${days}d ago`;
 }
 
 function formatDate(d: string): string {
@@ -197,25 +232,10 @@ export default async function PRsBoard() {
   const counts: Record<PRStatus, number> = { open: 0, merged: 0, draft: 0, closed: 0 };
   for (const pr of prs) counts[pr.liveStatus ?? "open"]++;
 
-  const catCounts = prs.reduce((m, pr) => {
-    if (pr.category) m[pr.category] = (m[pr.category] || 0) + 1;
-    return m;
-  }, {} as Record<PRCategory, number>);
   const catOrder: PRCategory[] = ["security", "correctness", "performance", "feature", "enhancement"];
-
   const total = prs.length;
   const mergedCount = counts.merged;
   const closedCount = counts.closed;
-  const acceptanceRate = mergedCount + closedCount > 0 ? Math.round((mergedCount / (mergedCount + closedCount)) * 100) : 0;
-
-  const lastMergedAgo = (() => {
-    const dates = prs.filter(p => p.mergedAt).map(p => new Date(p.mergedAt!).getTime()).filter(Boolean);
-    return dates.length ? agoLabel(new Date(Math.max(...dates)).toISOString()) : "";
-  })();
-  const lastRejectedAgo = (() => {
-    const dates = prs.filter(p => p.liveStatus === "closed" && p.closedAt).map(p => new Date(p.closedAt!).getTime()).filter(Boolean);
-    return dates.length ? agoLabel(new Date(Math.max(...dates)).toISOString()) : "";
-  })();
 
   const byNewest = (a: { submittedAt: string; number: number }, b: { submittedAt: string; number: number }) =>
     b.submittedAt.localeCompare(a.submittedAt) || b.number - a.number;
@@ -224,15 +244,44 @@ export default async function PRsBoard() {
   })).filter((g) => g.rows.length > 0);
 
   // ── pipeline ──
-  const openOpps = (pipeline?.opportunities ?? []).filter(o => o.status === "opportunity");
+  const submittedPRs = normalizePRs(pipeline?.submitted_prs ?? []);
+  const submittedRepos = new Set(submittedPRs.map((p) => p.repo));
+  const openOpps = (pipeline?.opportunities ?? []).filter(
+    (o) => o.status === "opportunity" && !submittedRepos.has(o.repo)
+  );
   const highConf = openOpps.filter(o => o.confidence >= 70);
   const favOpps = openOpps.filter(o => o.is_favorite || (pipeline?.favorites ?? []).includes(o.repo));
-  const submittedPRs = normalizePRs(pipeline?.submitted_prs ?? []);
+
+  // ── daily activity chart ──
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyCounts = PR_CATALOG.reduce((m, pr) => {
+    m[pr.submittedAt] = (m[pr.submittedAt] || 0) + 1;
+    return m;
+  }, {} as Record<string, number>);
+  const chartDays = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (13 - i));
+    const date = d.toISOString().slice(0, 10);
+    return { date, count: dailyCounts[date] || 0 };
+  });
+  const openToday  = dailyCounts[today] || 0;
+  const mergedToday = prs.filter(p => p.mergedAt?.startsWith(today)).length;
+  const closedToday = prs.filter(p => p.liveStatus === "closed" && p.closedAt?.startsWith(today)).length;
+  const chartMax = Math.max(...chartDays.map(d => d.count), 1);
+  const CW = 400, CH = 44;
+  const chartPad = 3;
+  const chartPts = chartDays.map((d, i) => ({
+    x: (i / (chartDays.length - 1)) * (CW - chartPad * 2) + chartPad,
+    y: CH - chartPad - (d.count / chartMax) * (CH - chartPad * 2),
+  }));
+  const linePath = chartPts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${chartPts[chartPts.length - 1].x.toFixed(1)},${CH} L${chartPts[0].x.toFixed(1)},${CH} Z`;
+  const todayPt = chartPts[chartPts.length - 1];
 
   return (
     <main className="min-h-screen bg-[#f6f8fa] text-[#1f2328]"
       style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-      <div className="max-w-[960px] mx-auto px-5 py-7 pb-16">
+      <div className="max-w-[1100px] mx-auto px-5 py-7 pb-16">
 
         {/* ── Header ── */}
         <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
@@ -248,70 +297,46 @@ export default async function PRsBoard() {
           {pipeline && <OpportunityActions action="scan" label="Scan Now" />}
         </div>
 
-        {/* ── Status hero tiles ── */}
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-gray-700 to-gray-900">
-            <Icon name="total" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{total}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Total PRs</div>
-          </div>
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-blue-600 to-blue-800">
-            <Icon name="open" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{counts.open}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Open</div>
-          </div>
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-green-600 to-emerald-700">
-            <Icon name="merged" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{counts.merged}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Merged</div>
-            {lastMergedAgo && <div className="text-[9px] text-white/60 mt-0.5">{lastMergedAgo}</div>}
-          </div>
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-rose-500 to-rose-700">
-            <Icon name="closed" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{counts.closed}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Rejected</div>
-            {lastRejectedAgo && <div className="text-[9px] text-white/60 mt-0.5">{lastRejectedAgo}</div>}
-          </div>
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-gray-400 to-gray-600">
-            <Icon name="draft" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{counts.draft}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Draft</div>
-          </div>
-          <div className="relative rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br from-violet-600 to-purple-800">
-            <Icon name="rate" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-            <div className="text-[24px] font-bold leading-none">{mergedCount + closedCount > 0 ? `${acceptanceRate}%` : "-"}</div>
-            <div className="text-[10px] text-white/80 mt-0.5">Accepted</div>
-          </div>
-        </div>
-
-        {/* ── Category mini-tiles ── */}
-        <div className="grid grid-cols-5 gap-2 mb-3">
-          {catOrder.map((c) => (
-            <div key={c} className={`relative rounded-[10px] px-2.5 py-2 text-white shadow-sm bg-gradient-to-br ${CAT_GRAD[c]}`}>
-              <Icon name={CAT_ICON[c]} className="w-3 h-3 absolute top-1.5 right-1.5 text-white/40" />
-              <div className="text-[20px] font-bold leading-none">{catCounts[c] || 0}</div>
-              <div className="text-[9px] text-white/80 mt-0.5 truncate">{CAT_LABEL[c]}</div>
+        {/* ── Hero: Open / Merged / Closed today ── */}
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          {([
+            { grad: "from-blue-600 to-blue-800",     icon: "open",   val: counts.open,   label: "Open",     sub: openToday > 0   ? `+${openToday} today`   : "" },
+            { grad: "from-green-600 to-emerald-700", icon: "merged", val: mergedCount,   label: "Merged",   sub: mergedToday > 0 ? `+${mergedToday} today`  : "" },
+            { grad: "from-rose-500 to-rose-700",     icon: "closed", val: closedCount,   label: "Rejected", sub: closedToday > 0 ? `+${closedToday} today`  : "" },
+          ] as const).map((t) => (
+            <div key={t.label} className={`rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br ${t.grad} flex items-stretch gap-2`}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[28px] font-bold leading-none">{t.val}</div>
+                <div className="text-[10px] text-white/80 mt-0.5">{t.label}</div>
+              </div>
+              <div className="w-[72px] shrink-0 flex flex-col justify-between">
+                <svg viewBox={`0 0 ${CW} ${CH}`} preserveAspectRatio="none" className="w-full" style={{ height: 32, display: "block" }}>
+                  <path d={areaPath} fill="rgba(255,255,255,0.12)" />
+                  <path d={linePath} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+                </svg>
+                {t.sub && <div className="text-[8px] text-white/60 text-right leading-none mt-0.5">{t.sub}</div>}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* ── Pipeline stat tiles ── */}
+        {/* ── Pipeline stats ── */}
         {pipeline && (
-          <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 mb-6">
-            <div className="relative rounded-[10px] px-3 py-2.5 text-white shadow-sm bg-gradient-to-br from-blue-500 to-blue-700">
-              <Icon name="telescope" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-              <div className="text-[20px] font-bold leading-none">{openOpps.length}</div>
-              <div className="text-[10px] text-white/80 mt-0.5">Opportunities</div>
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-blue-500 to-blue-700">
+              <Icon name="telescope" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
+              <div className="text-[18px] font-bold leading-none">{openOpps.length}</div>
+              <div className="text-[9px] text-white/80 mt-0.5">Opportunities</div>
             </div>
-            <div className="relative rounded-[10px] px-3 py-2.5 text-white shadow-sm bg-gradient-to-br from-emerald-500 to-emerald-700">
-              <Icon name="rate" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-              <div className="text-[20px] font-bold leading-none">{highConf.length}</div>
-              <div className="text-[10px] text-white/80 mt-0.5">High Conf</div>
+            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-emerald-500 to-emerald-700">
+              <Icon name="rate" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
+              <div className="text-[18px] font-bold leading-none">{highConf.length}</div>
+              <div className="text-[9px] text-white/80 mt-0.5">High Confidence</div>
             </div>
-            <div className="relative rounded-[10px] px-3 py-2.5 text-white shadow-sm bg-gradient-to-br from-amber-500 to-orange-600">
-              <Icon name="feature" className="w-3.5 h-3.5 absolute top-2 right-2 text-white/40" />
-              <div className="text-[20px] font-bold leading-none">{favOpps.length}</div>
-              <div className="text-[10px] text-white/80 mt-0.5">Favorites</div>
+            <div className="relative rounded-[10px] px-3 py-2 text-white shadow-sm bg-gradient-to-br from-amber-500 to-orange-600">
+              <Icon name="feature" className="w-3 h-3 absolute top-2 right-2 text-white/40" />
+              <div className="text-[18px] font-bold leading-none">{favOpps.length}</div>
+              <div className="text-[9px] text-white/80 mt-0.5">Favorites</div>
             </div>
           </div>
         )}
@@ -324,76 +349,91 @@ export default async function PRsBoard() {
         </div>
 
         {groups.map((g) => {
-          const byOrg = g.rows.reduce((m, r) => {
-            const org = (r.repo || "/").split("/")[0];
-            m[org] = (m[org] || 0) + 1;
-            return m;
-          }, {} as Record<string, number>);
-          const breakdown = Object.entries(byOrg).sort((a, b) => b[1] - a[1]);
+          const catBreakdown = catOrder
+            .map(c => ({ c, n: g.rows.filter(pr => pr.category === c).length }))
+            .filter(x => x.n > 0);
 
           return (
             <div key={g.status} className="mt-4 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className={`bg-gradient-to-r ${HGRAD[g.status]} px-4 py-2.5 flex items-center justify-between gap-2`}>
+              <div className={`bg-gradient-to-r ${HGRAD[g.status]} px-4 py-2.5 flex items-center gap-3`}>
                 <div className="flex items-center gap-2 shrink-0">
                   <h3 className="text-sm font-bold text-white tracking-wide">{STATUS_LABEL[g.status]}</h3>
                   <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">{g.rows.length}</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                  {breakdown.map(([org, n]) => (
-                    <span key={org} className="inline-flex items-center gap-1 min-w-[40px] text-[11px] font-bold text-white bg-white/20 rounded-full px-2 py-0.5 whitespace-nowrap">
-                      <OrgAvatar org={org} />
-                      <span className="text-white/90">{n}</span>
+                <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                  {catBreakdown.map(({ c, n }) => (
+                    <span key={c} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-white/85 bg-white/15 rounded-full px-2 py-0.5 whitespace-nowrap">
+                      <Icon name={CAT_ICON[c]} className="w-2.5 h-2.5" />
+                      {CAT_LABEL[c]} {n}
                     </span>
                   ))}
                 </div>
               </div>
-              <table className="w-full table-fixed border-collapse text-[11px] sm:text-[13px]">
+              <table className="w-full table-fixed border-collapse text-[11px]">
                 <colgroup>
-                  <col style={{ width: "20%" }} /><col style={{ width: "44%" }} />
-                  <col style={{ width: "10%" }} /><col style={{ width: "11%" }} /><col style={{ width: "15%" }} />
+                  <col style={{ width: "17%" }} />
+                  <col style={{ width: "42%" }} />
+                  <col style={{ width: "23%" }} />
+                  <col style={{ width: "18%" }} />
                 </colgroup>
                 <thead>
                   <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
-                    <th className="pl-3 pr-1 py-2 font-medium">Repo</th>
+                    <th className="pl-3 pr-2 py-2 font-medium">Repo</th>
                     <th className="px-2.5 py-2 font-medium">Title</th>
-                    <th className="px-1.5 py-2 font-medium">Issue</th>
-                    <th className="px-1.5 py-2 font-medium">Submitted</th>
-                    <th className="pl-1 pr-3 py-2 font-medium text-right">Status</th>
+                    <th className="px-2 py-2 font-medium">Issue</th>
+                    <th className="pl-2 pr-3 py-2 font-medium">PR</th>
                   </tr>
                 </thead>
                 <tbody>
                   {g.rows.map((pr) => {
                     const [org, repoName] = (pr.repo || "/").split("/");
                     const displayTitle = pr.liveTitle || pr.title;
-                    const agoSlot = g.status === "merged" ? agoLabel(pr.mergedAt)
+                    const dateSlot = g.status === "merged" ? agoLabel(pr.mergedAt)
                       : g.status === "closed" ? agoLabel(pr.closedAt)
-                      : agoLabel(`${pr.submittedAt}T00:00:00`);
+                      : formatDate(pr.submittedAt);
                     const prUrl = pr.url || `https://github.com/${pr.repo}/pull/${pr.number}`;
                     const issueMatch = /^#(\d+)$/.exec(pr.issue || "");
                     const issueUrl = issueMatch ? `https://github.com/${pr.repo}/issues/${issueMatch[1]}` : null;
+                    const rt = pr.repoType ?? "app";
                     return (
                       <tr key={`${pr.repo}-${pr.number}`} className={`border-t border-gray-100 transition-colors ${HOVER[g.status]}`}>
-                        <td className="pl-3 pr-1 py-2">
+                        <td className="pl-3 pr-2 py-2 overflow-hidden">
                           <a href={`https://github.com/${pr.repo}`} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1.5 min-w-0 no-underline hover:underline">
+                            <Icon name={rt} className={`w-3 h-3 shrink-0 ${TYPE_ICON_CLS[rt]}`} />
                             <OrgAvatar org={org} />
-                            <span className="truncate text-[#1f2328]">{repoName}</span>
+                            <span className="truncate text-[#1f2328] text-[11px]">{repoName}</span>
                           </a>
                         </td>
-                        <td className="px-2.5 py-2">
+                        <td className="px-2.5 py-2 overflow-hidden">
                           <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 min-w-0 no-underline group">
-                            {categoryChip(pr.category)}
+                            className="flex items-center gap-1 min-w-0 no-underline group">
                             <span className="flex-1 min-w-0 truncate text-[#1f2328] group-hover:text-blue-700 group-hover:underline">{displayTitle}</span>
-                            <span className="shrink-0 text-blue-700">&#8599;</span>
+                            <span className="shrink-0 text-blue-700 text-[10px]">&#8599;</span>
                           </a>
                         </td>
-                        <td className="px-1.5 py-2 text-[11px]">
-                          {issueUrl ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline">{pr.issue}</a>
-                            : <span className="text-gray-500">{pr.issue}</span>}
+                        <td className="px-2 py-2 overflow-hidden">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {categoryChip(pr.category)}
+                            {issueUrl
+                              ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline text-[10px] font-mono shrink-0 whitespace-nowrap">{pr.issue}</a>
+                              : <span className="text-gray-400 text-[10px] truncate whitespace-nowrap">{pr.issue}</span>}
+                          </div>
                         </td>
-                        <td className="px-1.5 py-2 text-gray-500 text-[11px] whitespace-nowrap">{formatDate(pr.submittedAt)}</td>
-                        <td className="pl-1 pr-3 py-2 text-right">{statusPill(g.status, agoSlot)}</td>
+                        <td className="pl-2 pr-3 py-2 overflow-hidden">
+                          <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
+                            <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-blue-700 no-underline hover:underline font-mono text-[11px] shrink-0">
+                              #{pr.number}
+                            </a>
+                            {g.status !== "open" && (
+                              <span className={`text-[8px] font-bold uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${PILL_CLS[g.status]}`}>
+                                {STATUS_LABEL[g.status]}
+                              </span>
+                            )}
+                            {dateSlot && <span className="text-[9px] text-gray-400 shrink-0">{dateSlot}</span>}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -405,13 +445,15 @@ export default async function PRsBoard() {
 
         {/* ══ SECTION: PIPELINE ══ */}
         {pipeline && openOpps.length > 0 && (
-          <>
-            <div className="flex items-center gap-2 mt-10 mb-3">
+          <details className="mt-10 opacity-50 hover:opacity-70 transition-opacity group">
+            <summary className="flex items-center gap-2 mb-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden select-none">
               <Icon name="telescope" className="w-4 h-4 text-gray-400" />
               <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Pipeline</span>
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-[11px] text-gray-400">{openOpps.length} open</span>
-            </div>
+              <span className="text-[11px] text-gray-400">{openOpps.length} queued</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 text-gray-300 group-open:rotate-90 transition-transform"><path d="M9 18l6-6-6-6"/></svg>
+            </summary>
+            <div>
 
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-2.5 flex items-center justify-between gap-2">
@@ -488,13 +530,14 @@ export default async function PRsBoard() {
                 </tbody>
               </table>
             </div>
-          </>
+            </div>
+          </details>
         )}
 
         {/* ── Footer ── */}
         <div className="mt-8 text-center text-xs text-gray-400">
           {total} PRs &middot; {openOpps.length} opportunities &middot; live from GitHub API &middot; localhost:3018
-          {mergedCount + closedCount > 0 && ` &middot; ${mergedCount}/${mergedCount + closedCount} resolved = ${acceptanceRate}%`}
+          {mergedCount + closedCount > 0 && ` · ${mergedCount}/${mergedCount + closedCount} resolved = ${Math.round((mergedCount / (mergedCount + closedCount)) * 100)}%`}
         </div>
       </div>
     </main>
