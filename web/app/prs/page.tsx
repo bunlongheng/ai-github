@@ -328,7 +328,7 @@ export default async function PRsBoard() {
               { val: scannedRepoCount, label: "Repos" },
               { val: openOpps.length,  label: "Opportunities" },
               { val: highConf.length,  label: "High Conf" },
-              { val: total,            label: "Opened" },
+              { val: total,            label: "Submitted" },
               { val: mergedCount,      label: "Merged" },
               { val: closedCount,      label: "Closed" },
               { val: favOpps.length,   label: "Favorites" },
