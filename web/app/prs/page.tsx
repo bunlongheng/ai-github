@@ -1,9 +1,6 @@
 import Image from "next/image";
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
-import { fetchLivePRs, PR_CATALOG, categoryOf } from "@/lib/prs";
+import { fetchLivePRs, PR_CATALOG } from "@/lib/prs";
 import type { PRStatus, PRCategory, RepoType } from "@/lib/prs";
-import OpportunityActions from "../discover/Actions";
 
 export const dynamic = "force-dynamic";
 
@@ -43,19 +40,6 @@ const STATUS_LABEL: Record<PRStatus, string> = {
   open: "Open", merged: "Merged", draft: "Draft", closed: "Closed",
 };
 const GROUP_ORDER: PRStatus[] = ["open", "merged", "draft", "closed"];
-
-const TYPE_PILL: Record<string, string> = {
-  bug_fix: "bg-red-50 text-red-700 border border-red-200",
-  security: "bg-red-50 text-red-700 border border-red-200",
-  docs: "bg-sky-50 text-sky-700 border border-sky-200",
-  performance: "bg-orange-50 text-orange-700 border border-orange-200",
-  feature: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-};
-const EFFORT_PILL: Record<string, string> = {
-  low: "bg-green-50 text-green-700 border border-green-200",
-  medium: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  high: "bg-red-50 text-red-600 border border-red-200",
-};
 
 // ─── icons ────────────────────────────────────────────────────────────────────
 
@@ -175,58 +159,11 @@ function statusPill(status: PRStatus, agoSlot?: string) {
   );
 }
 
-function confColor(c: number) {
-  if (c >= 75) return "text-green-600";
-  if (c >= 50) return "text-yellow-600";
-  return "text-gray-400";
-}
-
-function timeAgo(iso: string): string {
-  if (!iso) return "never";
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-// ─── pipeline data ────────────────────────────────────────────────────────────
-
-interface Opportunity {
-  id: string; repo: string; issue_number: number; issue_title: string; issue_url: string;
-  opportunity_type: string; effort: string; confidence: number; why: string;
-  status: "opportunity" | "skipped" | "pr_submitted"; found_at: string; age_days: number;
-  is_favorite: boolean; cambodia_community?: boolean;
-}
-
-interface PipelineState {
-  last_scan: string; favorites: string[];
-  submitted_prs: Record<string, unknown>[];
-  opportunities: Opportunity[];
-}
-
-function loadPipeline(): PipelineState | null {
-  const file = join(process.cwd(), "data/pipeline.json");
-  if (!existsSync(file)) return null;
-  return JSON.parse(readFileSync(file, "utf8"));
-}
-
-// Normalize submitted_prs - backfill missing title/issue/date from PR_CATALOG
-function normalizePRs(raw: Record<string, unknown>[]) {
-  return raw.map((p) => {
-    const prNum = (p.pr_number ?? p.pr) as number;
-    if (!p.title && prNum) {
-      const cat = PR_CATALOG.find((c) => c.repo === p.repo && c.number === prNum);
-      if (cat) return { repo: cat.repo, pr_number: cat.number, issue: cat.issue, title: cat.title, submitted_at: cat.submittedAt };
-    }
-    return { repo: p.repo as string, pr_number: prNum, issue: (p.issue ?? "") as string, title: (p.title ?? "") as string, submitted_at: ((p.submitted_at ?? p.submittedAt ?? "") as string) };
-  });
-}
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default async function PRsBoard() {
-  const [prs, pipeline] = await Promise.all([fetchLivePRs(), Promise.resolve(loadPipeline())]);
+  const prs = await fetchLivePRs();
 
   // ── PR counts ──
   const counts: Record<PRStatus, number> = { open: 0, merged: 0, draft: 0, closed: 0 };
@@ -242,16 +179,6 @@ export default async function PRsBoard() {
   const groups = GROUP_ORDER.map((status) => ({
     status, rows: prs.filter((pr) => (pr.liveStatus ?? "open") === status).sort(byNewest),
   })).filter((g) => g.rows.length > 0);
-
-  // ── pipeline ──
-  const submittedPRs = normalizePRs(pipeline?.submitted_prs ?? []);
-  const submittedRepos = new Set(submittedPRs.map((p) => p.repo));
-  const openOpps = (pipeline?.opportunities ?? []).filter(
-    (o) => o.status === "opportunity" && !submittedRepos.has(o.repo)
-  );
-  const highConf = openOpps.filter(o => o.confidence >= 70);
-  const favOpps = openOpps.filter(o => o.is_favorite || (pipeline?.favorites ?? []).includes(o.repo));
-  const scannedRepoCount = new Set((pipeline?.opportunities ?? []).map(o => o.repo)).size;
 
   // ── daily activity chart ──
   const today = new Date().toISOString().slice(0, 10);
@@ -291,12 +218,10 @@ export default async function PRsBoard() {
             <div>
               <h1 className="text-3xl font-bold text-[#1f2328] leading-none">AI GitHub</h1>
               <div className="text-[13px] text-gray-500 mt-1">
-                {total} PRs out &middot; {openOpps.length} opportunities &middot;{" "}
-                {pipeline?.last_scan ? `last scan ${timeAgo(pipeline.last_scan)}` : "not yet scanned"}
+                {total} PRs submitted &middot; {mergedCount} merged
               </div>
             </div>
           </div>
-          {pipeline && <OpportunityActions action="scan" label="Scan Now" />}
         </div>
 
         {/* ── Hero: Open / Merged / Closed today ── */}
@@ -321,29 +246,6 @@ export default async function PRsBoard() {
             </div>
           ))}
         </div>
-
-        {/* ── Funnel bar ── */}
-        {pipeline && (
-          <div className="rounded-xl bg-[#1f2328] px-4 py-2.5 mb-6 flex items-center gap-0 overflow-hidden">
-            {([
-              { val: scannedRepoCount, label: "Repos" },
-              { val: openOpps.length,  label: "Opportunities" },
-              { val: highConf.length,  label: "High Conf" },
-              { val: total,            label: "Submitted" },
-              { val: mergedCount,      label: "Merged" },
-              { val: closedCount,      label: "Closed" },
-              { val: favOpps.length,   label: "Favorites" },
-            ]).map((item, i) => (
-              <div key={item.label} className="flex items-center">
-                {i > 0 && <span className="text-white/20 text-[11px] mx-3">&#8594;</span>}
-                <div className="flex flex-col items-center min-w-0">
-                  <span className="text-[15px] font-bold text-white leading-none">{item.val}</span>
-                  <span className="text-[8.5px] text-white/40 uppercase tracking-wide mt-0.5 whitespace-nowrap">{item.label}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* ══ SECTION: PR BOARD ══ */}
         <div className="flex items-center gap-2 mb-3">
@@ -382,10 +284,10 @@ export default async function PRsBoard() {
                 </colgroup>
                 <thead>
                   <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
-                    <th className="pl-3 pr-2 py-2 font-medium">Repo</th>
-                    <th className="px-2.5 py-2 font-medium">Title</th>
-                    <th className="px-2 py-2 font-medium">Issue</th>
-                    <th className="pl-2 pr-3 py-2 font-medium">PR</th>
+                    <th className="pl-3 pr-2 py-2 font-medium align-top">Repo</th>
+                    <th className="px-2.5 py-2 font-medium align-top">Title</th>
+                    <th className="px-2 py-2 font-medium align-top">Issue</th>
+                    <th className="pl-2 pr-3 py-2 font-medium align-top">PR</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -401,31 +303,31 @@ export default async function PRsBoard() {
                     const rt = pr.repoType ?? "app";
                     return (
                       <tr key={`${pr.repo}-${pr.number}`} className={`border-t border-gray-100 transition-colors ${HOVER[g.status]}`}>
-                        <td className="pl-3 pr-2 py-2 overflow-hidden">
+                        <td className="pl-3 pr-2 py-2 overflow-hidden align-top">
                           <a href={`https://github.com/${pr.repo}`} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1.5 min-w-0 no-underline hover:underline">
-                            <Icon name={rt} className={`w-3 h-3 shrink-0 ${TYPE_ICON_CLS[rt]}`} />
                             <OrgAvatar org={org} />
                             <span className="truncate text-[#1f2328] text-[11px]">{repoName}</span>
                           </a>
                         </td>
-                        <td className="px-2.5 py-2 overflow-hidden">
+                        <td className="px-2.5 py-2 overflow-hidden align-top">
                           <a href={prUrl} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1 min-w-0 no-underline group">
+                            <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
                             <span className="flex-1 min-w-0 truncate text-[#1f2328] group-hover:text-blue-700 group-hover:underline">{displayTitle}</span>
                             <span className="shrink-0 text-blue-700 text-[10px]">&#8599;</span>
                           </a>
                         </td>
-                        <td className="px-2 py-2 overflow-hidden">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                        <td className="px-2 py-2 overflow-hidden align-top">
+                          <div className="flex items-start gap-1.5 min-w-0 flex-wrap">
                             {issueUrl
                               ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline text-[10px] font-mono shrink-0 whitespace-nowrap">{pr.issue}</a>
                               : <span className="text-gray-400 text-[10px] whitespace-nowrap shrink-0">{pr.issue}</span>}
                             {categoryChip(pr.category)}
                           </div>
                         </td>
-                        <td className="pl-2 pr-3 py-2 overflow-hidden">
-                          <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
+                        <td className="pl-2 pr-3 py-2 overflow-hidden align-top">
+                          <div className="flex items-start gap-1.5 min-w-0 flex-wrap whitespace-nowrap">
                             <a href={prUrl} target="_blank" rel="noopener noreferrer"
                               className="text-blue-700 no-underline hover:underline font-mono text-[11px] shrink-0">
                               #{pr.number}
@@ -447,111 +349,10 @@ export default async function PRsBoard() {
           );
         })}
 
-        {/* ══ SECTION: PIPELINE ══ */}
-        {pipeline && openOpps.length > 0 && (
-          <details className="mt-10 opacity-50 hover:opacity-70 transition-opacity group">
-            <summary className="flex items-center gap-2 mb-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden select-none">
-              <Icon name="telescope" className="w-4 h-4 text-gray-400" />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Pipeline</span>
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-[11px] text-gray-400">{openOpps.length} queued</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 text-gray-300 group-open:rotate-90 transition-transform"><path d="M9 18l6-6-6-6"/></svg>
-            </summary>
-            <div>
-
-            {/* Auditing mode banner - only visible when expanded */}
-            <div className="hidden group-open:flex items-center justify-center gap-4 py-5 mb-4 rounded-2xl bg-[#0d1117] border border-blue-900/40">
-              <Image src="/audit-bot.png" alt="Auditing Mode" width={90} height={90} unoptimized className="shrink-0" />
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-400 mb-0.5">Auditing Mode</div>
-                <div className="text-white text-[18px] font-bold leading-tight">Scanning repos for security issues</div>
-                <div className="text-[11px] text-white/40 mt-0.5">{openOpps.length} opportunities queued &middot; {highConf.length} high confidence</div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white tracking-wide">Opportunities</h3>
-                  <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">{openOpps.length}</span>
-                  <span className="text-xs text-white/70 bg-white/10 rounded-full px-2 py-0.5">{highConf.length} high conf</span>
-                </div>
-                <OpportunityActions action="scan" label="Scan" />
-              </div>
-              <table className="w-full table-fixed border-collapse text-[11px] sm:text-[12px]">
-                <colgroup>
-                  <col style={{ width: "3%" }} /><col style={{ width: "18%" }} />
-                  <col style={{ width: "6%" }} /><col style={{ width: "30%" }} />
-                  <col style={{ width: "8%" }} /><col style={{ width: "7%" }} />
-                  <col style={{ width: "6%" }} /><col style={{ width: "6%" }} />
-                  <col style={{ width: "16%" }} />
-                </colgroup>
-                <thead>
-                  <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
-                    <th className="pl-2 py-2"></th>
-                    <th className="px-2 py-2 font-medium">Repo</th>
-                    <th className="px-2 py-2 font-medium">Issue</th>
-                    <th className="px-2 py-2 font-medium">Title</th>
-                    <th className="px-2 py-2 font-medium">Type</th>
-                    <th className="px-2 py-2 font-medium">Effort</th>
-                    <th className="px-2 py-2 font-medium">Conf</th>
-                    <th className="px-2 py-2 font-medium">Age</th>
-                    <th className="px-2 pr-3 py-2 font-medium">Why</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {openOpps.slice(0, 50).map((opp) => {
-                    const [org, repoName] = opp.repo.split("/");
-                    return (
-                      <tr key={opp.id} className="border-t border-gray-100 hover:bg-blue-50 transition-colors">
-                        <td className="pl-2 py-2">
-                          <OpportunityActions action="favorite" oppId={opp.id} repo={opp.repo}
-                            isFav={opp.is_favorite || (pipeline.favorites ?? []).includes(opp.repo)} />
-                        </td>
-                        <td className="px-2 py-2 truncate">
-                          <a href={`https://github.com/${opp.repo}`} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 min-w-0 no-underline hover:underline">
-                            <OrgAvatar org={org} />
-                            <span className="truncate text-[#1f2328] font-medium">{repoName}</span>
-                          </a>
-                        </td>
-                        <td className="px-2 py-2">
-                          <a href={opp.issue_url} target="_blank" rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline">#{opp.issue_number}</a>
-                        </td>
-                        <td className="px-2 py-2 truncate text-[#1f2328]" title={opp.issue_title}>{opp.issue_title}</td>
-                        <td className="px-2 py-2">
-                          <span className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 ${TYPE_PILL[opp.opportunity_type] || "bg-gray-100 text-gray-500"}`}>
-                            {opp.opportunity_type.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <span className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 ${EFFORT_PILL[opp.effort] || "bg-gray-100 text-gray-500"}`}>
-                            {opp.effort}
-                          </span>
-                        </td>
-                        <td className={`px-2 py-2 font-bold ${confColor(opp.confidence)}`}>{opp.confidence}%</td>
-                        <td className="px-2 py-2 text-gray-500 whitespace-nowrap">{opp.age_days}d</td>
-                        <td className="px-2 pr-3 py-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="flex-1 min-w-0 truncate text-gray-500 text-[10px]" title={opp.why}>{opp.why}</span>
-                            <OpportunityActions action="skip" oppId={opp.id} />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            </div>
-          </details>
-        )}
-
         {/* ── Footer ── */}
         <div className="mt-8 text-center text-xs text-gray-400">
-          {total} PRs &middot; {openOpps.length} opportunities &middot; live from GitHub API &middot; localhost:3018
-          {mergedCount + closedCount > 0 && ` · ${mergedCount}/${mergedCount + closedCount} resolved = ${Math.round((mergedCount / (mergedCount + closedCount)) * 100)}%`}
+          {total} submitted &middot; {mergedCount} merged &middot; live from GitHub API &middot; localhost:3018
+          {closedCount > 0 && ` · ${closedCount} rejected`}
         </div>
       </div>
     </main>
