@@ -55,6 +55,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "shamanec/GADS":                "tool",
   "chrisbenincasa/tunarr":        "app",
   "nodetool-ai/nodetool":         "ai",
+  "jaypipes/ghw":                 "lib",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -438,6 +439,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 4787,
     repo: "nodetool-ai/nodetool",
     title: "fix(security): block IPv6-mapped and decimal-encoded IPs in SSRF guard",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 472,
+    repo: "jaypipes/ghw",
+    title: "fix(snapshot): contain tar entry paths within destination directory",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
