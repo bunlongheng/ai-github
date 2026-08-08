@@ -62,6 +62,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "httpie/cli":                   "tool",
   "nektos/act":                   "tool",
   "pydantic/logfire":             "lib",
+  "jesseduffield/lazygit":        "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -494,6 +495,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 2217,
     repo: "pydantic/logfire",
     title: "fix(auth,client): add timeout to outbound HTTP session requests",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 5914,
+    repo: "jesseduffield/lazygit",
+    title: "fix(updates): add timeout to HTTP requests in update checker",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
