@@ -58,6 +58,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "jaypipes/ghw":                 "lib",
   "hoppscotch/hoppscotch":        "app",
   "sourcegraph/src-cli":          "tool",
+  "j3ssie/osmedeus":              "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
