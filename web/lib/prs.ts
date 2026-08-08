@@ -48,6 +48,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "dgloeckner/clubbar":           "app",
   "t33r-code/flash-me":           "app",
   "cryptoadvance/specter-desktop": "app",
+  "rush86999/atom":                "app",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -382,6 +383,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 2687,
     repo: "cryptoadvance/specter-desktop",
     title: "fix(swan): add timeout to remote HTTP requests to prevent hang",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 579,
+    repo: "rush86999/atom",
+    title: "fix(auth): add timeout to OAuth token exchange request",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
