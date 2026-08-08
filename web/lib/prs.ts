@@ -49,6 +49,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "t33r-code/flash-me":           "app",
   "cryptoadvance/specter-desktop": "app",
   "rush86999/atom":                "app",
+  "mr-karan/logchef":             "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -390,6 +391,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 579,
     repo: "rush86999/atom",
     title: "fix(auth): add timeout to OAuth token exchange request",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 99,
+    repo: "mr-karan/logchef",
+    title: "fix(clickhouse): validate identifier names before interpolating into queries",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
