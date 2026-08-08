@@ -61,6 +61,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "j3ssie/osmedeus":              "tool",
   "httpie/cli":                   "tool",
   "nektos/act":                   "tool",
+  "pydantic/logfire":             "lib",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -486,6 +487,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 6157,
     repo: "nektos/act",
     title: "fix(security): add timeout to notices HTTP client and path guard to file collector",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 2217,
+    repo: "pydantic/logfire",
+    title: "fix(auth,client): add timeout to outbound HTTP session requests",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
