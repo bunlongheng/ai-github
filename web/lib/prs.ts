@@ -60,6 +60,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "sourcegraph/src-cli":          "tool",
   "j3ssie/osmedeus":              "tool",
   "httpie/cli":                   "tool",
+  "nektos/act":                   "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -478,6 +479,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 1920,
     repo: "httpie/cli",
     title: "fix(update): add timeout to PyPI version check request",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 6157,
+    repo: "nektos/act",
+    title: "fix(security): add timeout to notices HTTP client and path guard to file collector",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
