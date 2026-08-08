@@ -319,7 +319,7 @@ export default async function PRsBoard() {
                           </a>
                         </td>
                         <td className="px-2 py-2 overflow-hidden align-top">
-                          <div className="flex items-start gap-1.5 min-w-0 flex-wrap">
+                          <div className="flex flex-col items-start gap-0.5">
                             {issueUrl
                               ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline text-[10px] font-mono shrink-0 whitespace-nowrap">{pr.issue}</a>
                               : <span className="text-gray-400 text-[10px] whitespace-nowrap shrink-0">{pr.issue}</span>}
@@ -327,16 +327,11 @@ export default async function PRsBoard() {
                           </div>
                         </td>
                         <td className="pl-2 pr-3 py-2 overflow-hidden align-top">
-                          <div className="flex items-start gap-1.5 min-w-0 flex-wrap whitespace-nowrap">
+                          <div className="flex flex-col items-start gap-0.5">
                             <a href={prUrl} target="_blank" rel="noopener noreferrer"
                               className="text-blue-700 no-underline hover:underline font-mono text-[11px] shrink-0">
                               #{pr.number}
                             </a>
-                            {g.status !== "open" && (
-                              <span className={`text-[8px] font-bold uppercase tracking-wide rounded px-1 py-0.5 shrink-0 ${PILL_CLS[g.status]}`}>
-                                {STATUS_LABEL[g.status]}
-                              </span>
-                            )}
                             {dateSlot && <span className="text-[9px] text-gray-400 shrink-0">{dateSlot}</span>}
                           </div>
                         </td>
