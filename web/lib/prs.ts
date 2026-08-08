@@ -63,6 +63,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "nektos/act":                   "tool",
   "pydantic/logfire":             "lib",
   "jesseduffield/lazygit":        "tool",
+  "withastro/astro":              "lib",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -502,6 +503,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 5914,
     repo: "jesseduffield/lazygit",
     title: "fix(updates): add timeout to HTTP requests in update checker",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 17639,
+    repo: "withastro/astro",
+    title: "fix(assets): add AbortSignal timeout to remote image fetch",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
