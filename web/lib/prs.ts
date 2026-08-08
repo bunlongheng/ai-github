@@ -59,6 +59,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "hoppscotch/hoppscotch":        "app",
   "sourcegraph/src-cli":          "tool",
   "j3ssie/osmedeus":              "tool",
+  "httpie/cli":                   "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -470,6 +471,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 318,
     repo: "j3ssie/osmedeus",
     title: "fix(installer): validate symlink targets stay within extraction directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 1920,
+    repo: "httpie/cli",
+    title: "fix(update): add timeout to PyPI version check request",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
