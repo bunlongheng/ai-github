@@ -57,6 +57,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "nodetool-ai/nodetool":         "ai",
   "jaypipes/ghw":                 "lib",
   "hoppscotch/hoppscotch":        "app",
+  "sourcegraph/src-cli":          "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -454,6 +455,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 6562,
     repo: "hoppscotch/hoppscotch",
     title: "fix(context-menu): remove catastrophic backtracking in URL detection regex",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 1360,
+    repo: "sourcegraph/src-cli",
+    title: "fix(search-jobs): add timeout to authenticated HTTP requests",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
