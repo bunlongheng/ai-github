@@ -65,6 +65,11 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "jesseduffield/lazygit":        "tool",
   "withastro/astro":              "lib",
   "Infisical/infisical":          "app",
+  "donetick/donetick":            "tool",
+  "hhursev/recipe-scrapers":      "app",
+  "johanohly/AirTrail":           "app",
+  "lennart-k/rustical":           "tool",
+  "CanineHQ/canine":              "lib",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -518,6 +523,41 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 7602,
     repo: "Infisical/infisical",
     title: "fix(app-connections): add timeout to outbound HTTP requests in connectors",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 781,
+    repo: "donetick/donetick",
+    title: "Add timeout to Discord webhook client",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 2032,
+    repo: "hhursev/recipe-scrapers",
+    title: "Add timeout to network fetches in scrape_me and online scrape_html",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 695,
+    repo: "johanohly/AirTrail",
+    title: "fix: path traversal in airline icon upload",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 253,
+    repo: "lennart-k/rustical",
+    title: "Add timeout to WebDAV-Push notifier HTTP client",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 701,
+    repo: "CanineHQ/canine",
+    title: "Add request timeouts to Artifact Hub HTTP calls",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
