@@ -466,6 +466,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
+  {
+    number: 318,
+    repo: "j3ssie/osmedeus",
+    title: "fix(installer): validate symlink targets stay within extraction directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
