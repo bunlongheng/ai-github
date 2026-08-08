@@ -52,6 +52,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "mr-karan/logchef":             "tool",
   "doronz88/pymobiledevice3":     "tool",
   "mariadb-operator/mariadb-operator": "tool",
+  "shamanec/GADS":                "tool",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -414,6 +415,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 1866,
     repo: "mariadb-operator/mariadb-operator",
     title: "fix(security): replace world-writable 0777 modes with restrictive permissions",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 351,
+    repo: "shamanec/GADS",
+    title: "fix(archive): check zip entry paths stay within destination directory",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
