@@ -459,6 +459,16 @@ export default async function PRsBoard() {
             </summary>
             <div>
 
+            {/* Auditing mode banner - only visible when expanded */}
+            <div className="hidden group-open:flex items-center justify-center gap-4 py-5 mb-4 rounded-2xl bg-[#0d1117] border border-blue-900/40">
+              <Image src="/audit-bot.png" alt="Auditing Mode" width={90} height={90} unoptimized className="shrink-0" />
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-400 mb-0.5">Auditing Mode</div>
+                <div className="text-white text-[18px] font-bold leading-tight">Scanning repos for security issues</div>
+                <div className="text-[11px] text-white/40 mt-0.5">{openOpps.length} opportunities queued &middot; {highConf.length} high confidence</div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
