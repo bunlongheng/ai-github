@@ -56,6 +56,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "chrisbenincasa/tunarr":        "app",
   "nodetool-ai/nodetool":         "ai",
   "jaypipes/ghw":                 "lib",
+  "hoppscotch/hoppscotch":        "app",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -446,6 +447,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 472,
     repo: "jaypipes/ghw",
     title: "fix(snapshot): contain tar entry paths within destination directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 6562,
+    repo: "hoppscotch/hoppscotch",
+    title: "fix(context-menu): remove catastrophic backtracking in URL detection regex",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
