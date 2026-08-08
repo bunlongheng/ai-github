@@ -53,6 +53,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "doronz88/pymobiledevice3":     "tool",
   "mariadb-operator/mariadb-operator": "tool",
   "shamanec/GADS":                "tool",
+  "chrisbenincasa/tunarr":        "app",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -422,6 +423,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 351,
     repo: "shamanec/GADS",
     title: "fix(archive): check zip entry paths stay within destination directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 1982,
+    repo: "chrisbenincasa/tunarr",
+    title: "fix(api): contain troubleshoot file reads within session temp directory",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
