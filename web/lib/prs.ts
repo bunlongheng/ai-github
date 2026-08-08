@@ -64,6 +64,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "pydantic/logfire":             "lib",
   "jesseduffield/lazygit":        "tool",
   "withastro/astro":              "lib",
+  "Infisical/infisical":          "app",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -510,6 +511,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 17639,
     repo: "withastro/astro",
     title: "fix(assets): add AbortSignal timeout to remote image fetch",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 7602,
+    repo: "Infisical/infisical",
+    title: "fix(app-connections): add timeout to outbound HTTP requests in connectors",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
