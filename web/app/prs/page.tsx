@@ -286,13 +286,14 @@ export default async function PRsBoard() {
 
         {/* ── Header ── */}
         <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-bold text-[#1f2328]">AI GitHub</h1>
-            </div>
-            <div className="text-[13px] text-gray-500">
-              {total} PRs out &middot; {openOpps.length} opportunities &middot;{" "}
-              {pipeline?.last_scan ? `last scan ${timeAgo(pipeline.last_scan)}` : "not yet scanned"}
+          <div className="flex items-center gap-3">
+            <Image src="/logo.png" alt="AI GitHub Bot" width={52} height={52} className="rounded-xl shrink-0" unoptimized />
+            <div>
+              <h1 className="text-3xl font-bold text-[#1f2328] leading-none">AI GitHub</h1>
+              <div className="text-[13px] text-gray-500 mt-1">
+                {total} PRs out &middot; {openOpps.length} opportunities &middot;{" "}
+                {pipeline?.last_scan ? `last scan ${timeAgo(pipeline.last_scan)}` : "not yet scanned"}
+              </div>
             </div>
           </div>
           {pipeline && <OpportunityActions action="scan" label="Scan Now" />}
