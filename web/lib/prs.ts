@@ -54,6 +54,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "mariadb-operator/mariadb-operator": "tool",
   "shamanec/GADS":                "tool",
   "chrisbenincasa/tunarr":        "app",
+  "nodetool-ai/nodetool":         "ai",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -430,6 +431,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     number: 1982,
     repo: "chrisbenincasa/tunarr",
     title: "fix(api): contain troubleshoot file reads within session temp directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
+  {
+    number: 4787,
+    repo: "nodetool-ai/nodetool",
+    title: "fix(security): block IPv6-mapped and decimal-encoded IPs in SSRF guard",
     issue: "security-audit",
     submittedAt: "2026-08-08",
   },
