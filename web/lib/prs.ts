@@ -7,6 +7,53 @@ export type PRCategory =
   | "feature"
   | "enhancement";
 
+export type RepoType = "game" | "ai" | "lib" | "app" | "tool" | "api";
+
+const REPO_TYPE_MAP: Record<string, RepoType> = {
+  "DexterHuang/CyberCodeOnline": "game",
+  "openfrontio/OpenFrontIO":      "game",
+  "ill-inc/biomes-game":          "game",
+  "benlikescode/geohub":          "game",
+  "BerriAI/litellm":              "ai",
+  "567-labs/instructor":          "ai",
+  "mloda-ai/mloda":               "ai",
+  "Toloka/tolokaforge":           "ai",
+  "open-webui/open-webui":        "ai",
+  "steipete/summarize":           "ai",
+  "garrytan/gbrain":              "ai",
+  "remsky/Kokoro-FastAPI":        "ai",
+  "openai/openai-python":         "ai",
+  "pydantic/pydantic":            "lib",
+  "pallets/click":                "lib",
+  "charmbracelet/bubbletea":      "lib",
+  "recharts/recharts":            "lib",
+  "shadcn-ui/ui":                 "lib",
+  "spatie/laravel-medialibrary":  "lib",
+  "trpc/trpc":                    "lib",
+  "seanghay/sone":                "lib",
+  "bizz84/starter_architecture_flutter_firebase": "lib",
+  "simonw/datasette":             "tool",
+  "simonw/sqlite-utils":          "tool",
+  "charmbracelet/glow":           "tool",
+  "openclaw/crabbox":             "tool",
+  "openclaw/crabpot":             "tool",
+  "openclaw/acpx":                "tool",
+  "openclaw/gogcli":              "tool",
+  "garrytan/gstack":              "tool",
+  "steipete/oracle":              "tool",
+  "jdx/mise":                     "tool",
+  "marimo-team/marimo":           "app",
+  "goauthentik/authentik":        "app",
+  "block/buzz":                   "app",
+  "dgloeckner/clubbar":           "app",
+  "t33r-code/flash-me":           "app",
+  "cryptoadvance/specter-desktop": "app",
+};
+
+export function repoTypeOf(repo: string): RepoType {
+  return REPO_TYPE_MAP[repo] ?? "app";
+}
+
 export interface PR {
   number: number;
   repo: string;        // "marimo-team/marimo"
@@ -14,6 +61,7 @@ export interface PR {
   issue: string;       // "#9624"
   submittedAt: string; // "2026-08-05"
   category?: PRCategory;
+  repoType?: RepoType;
   // fetched live:
   liveStatus?: PRStatus;
   liveTitle?: string;
@@ -31,6 +79,9 @@ const PR_CATEGORY: Record<number, PRCategory> = {
   2507: "security",   // instructor: request timeouts / DoS
   35965: "feature",   // litellm: track Google Maps grounding cost
   11413: "enhancement", // shadcn: remove unused default fonts
+  3765: "security",   // CyberCodeOnline: restrict validate-json workflow to read-only token
+  11764: "security",  // mise: validate aqua registry file names against path traversal
+  124: "security",    // geohub: bump next to patch CVE-2025-29927
 };
 
 // Fallback categorizer for PRs not in PR_CATEGORY (keeps the board correct as
@@ -271,6 +322,69 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "CVE-2025-62727",
     submittedAt: "2026-08-06",
   },
+  {
+    number: 176,
+    repo: "dgloeckner/clubbar",
+    title: "fix(security): move IBAN out of GET query params in bank lookup",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 336,
+    repo: "t33r-code/flash-me",
+    title: "fix(security): cap the real inflated size per import entry to block understated zip bombs",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 3961,
+    repo: "spatie/laravel-medialibrary",
+    title: "Decode remote url path before stripping directory in addMediaFromUrl",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 24888,
+    repo: "goauthentik/authentik",
+    title: "Use constant-time comparison for secret key in SecretKeyFilter",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 5239,
+    repo: "block/buzz",
+    title: "fix(auth): match bracketed ::1 host in NIP-42 relay url check",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 3765,
+    repo: "DexterHuang/CyberCodeOnline",
+    title: "ci: restrict validate-json workflow to read-only token",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 11764,
+    repo: "jdx/mise",
+    title: "fix(aqua): validate registry file names against path traversal",
+    issue: "security-audit",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 124,
+    repo: "benlikescode/geohub",
+    title: "fix: bump next from 12.2.4 to 12.3.6 to patch CVE-2025-29927",
+    issue: "CVE-2025-29927",
+    submittedAt: "2026-08-07",
+  },
+  {
+    number: 2687,
+    repo: "cryptoadvance/specter-desktop",
+    title: "fix(swan): add timeout to remote HTTP requests to prevent hang",
+    issue: "security-audit",
+    submittedAt: "2026-08-08",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
@@ -308,5 +422,5 @@ async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" |
 
 export async function fetchLivePRs(): Promise<PR[]> {
   const prs = await Promise.all(PR_CATALOG.map(fetchOnePR));
-  return prs.map((p) => ({ ...p, category: categoryOf(p) }));
+  return prs.map((p) => ({ ...p, category: categoryOf(p), repoType: repoTypeOf(p.repo) }));
 }
