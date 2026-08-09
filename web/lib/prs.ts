@@ -70,6 +70,10 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "johanohly/AirTrail":           "app",
   "lennart-k/rustical":           "tool",
   "CanineHQ/canine":              "lib",
+  "MikeMeliz/TorCrawl.py":        "app",
+  "terrakube-io/terrakube":        "lib",
+  "skydevil88/XboxDownload":       "lib",
+  "ampache/ampache":               "lib",
 };
 
 export function repoTypeOf(repo: string): RepoType {
@@ -560,6 +564,34 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     title: "Add request timeouts to Artifact Hub HTTP calls",
     issue: "security-audit",
     submittedAt: "2026-08-08",
+  },
+  {
+    number: 52,
+    repo: "MikeMeliz/TorCrawl.py",
+    title: "Add request timeout to crawler _make_request to prevent hangs",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
+  },
+  {
+    number: 3390,
+    repo: "terrakube-io/terrakube",
+    title: "Add connect/read timeouts to the proxy RestTemplate",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
+  },
+  {
+    number: 150,
+    repo: "skydevil88/XboxDownload",
+    title: "Prevent path traversal in local upload file serving",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
+  },
+  {
+    number: 4436,
+    repo: "ampache/ampache",
+    title: "Add connect/read timeouts to UPnP device cURL requests",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
   },
 ];
 
