@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "AI Github", template: "%s · AI Github" },
-  description: "Open-source GitHub PR tracker",
-  applicationName: "AI Github",
+  title: { default: "AI Security", template: "%s · AI Security" },
+  description: "Open-source security-audit pipeline and PR tracker",
+  applicationName: "AI Security",
 };
 
 export const viewport: Viewport = {

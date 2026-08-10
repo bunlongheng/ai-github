@@ -1,4 +1,4 @@
-# ai-github
+# ai-security
 
 > Automated open-source contribution pipeline - discover real PR opportunities, track every submission, and build engineering reputation through quality pull requests.
 
@@ -30,8 +30,8 @@
 
 ```bash
 # 1. Clone
-git clone https://github.com/bunlongheng/ai-github
-cd ai-github/web
+git clone https://github.com/bunlongheng/ai-security
+cd ai-security/web
 
 # 2. Install dependencies
 npm install
@@ -59,7 +59,7 @@ Results are written to `web/data/pipeline.json` (gitignored - runtime data).
 
 **Schedule it hourly** with cron or any task scheduler:
 ```cron
-13 * * * * cd /path/to/ai-github && node scripts/discover.mjs >> /tmp/discover.log 2>&1
+13 * * * * cd /path/to/ai-security && node scripts/discover.mjs >> /tmp/discover.log 2>&1
 ```
 
 ## Adding a submitted PR
@@ -105,7 +105,7 @@ Score >= 70 = high confidence. Score < 30 = filtered out.
 ## Project structure
 
 ```
-ai-github/
+ai-security/
 - scripts/
   - discover.mjs       # hourly discovery engine
 - web/
