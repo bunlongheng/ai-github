@@ -1,36 +1,51 @@
 import Link from "next/link";
 import { getAuditReport } from "@/lib/db";
 import type { Finding, FileAudited } from "@/lib/db";
-import { notFound } from "next/navigation";
 import { PR_CATALOG } from "@/lib/prs";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function scoreBar(val: number) {
   const pct = (val / 10) * 100;
-  const color = val >= 8 ? "#22c55e" : val >= 6 ? "#f59e0b" : "#ef4444";
+  const color = val >= 8 ? "#1a7f37" : val >= 6 ? "#b45309" : "#cf222e";
+  const bg = val >= 8 ? "#dafbe1" : val >= 6 ? "#fef3c7" : "#ffebe9";
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className="text-[11px] font-bold" style={{ color }}>{val}</span>
-      <span className="block rounded-full overflow-hidden" style={{ width: 40, height: 5, background: "#e5e7eb" }}>
-        <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+    <span className="inline-flex items-center gap-1.5">
+      <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: "ui-monospace,monospace" }}>{val}</span>
+      <span style={{ width: 44, height: 4, background: "#eaeaea", borderRadius: 99, overflow: "hidden", display: "inline-block" }}>
+        <span style={{ display: "block", width: `${pct}%`, height: "100%", background: color, borderRadius: 99 }} />
       </span>
     </span>
   );
 }
 
 function confidencePill(c: number) {
-  const cls = c >= 90 ? "bg-green-50 text-green-700 border border-green-200"
-    : c >= 75 ? "bg-amber-50 text-amber-700 border border-amber-200"
-    : "bg-red-50 text-red-600 border border-red-200";
-  return <span className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 ${cls}`}>{c}%</span>;
+  const s = c >= 90 ? { bg: "#dafbe1", color: "#1a7f37", border: "#a7f3d0" }
+    : c >= 75 ? { bg: "#fef9c3", color: "#854d0e", border: "#fde68a" }
+    : { bg: "#ffebe9", color: "#cf222e", border: "#ffcdd8" };
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, fontFamily: "ui-monospace,monospace",
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+      borderRadius: 4, padding: "1px 6px", letterSpacing: "0.03em"
+    }}>{c}%</span>
+  );
 }
 
 function severityPill(s: string) {
-  const cls = s === "high" || s === "critical" ? "bg-red-50 text-red-700 border border-red-200"
-    : s === "medium" ? "bg-amber-50 text-amber-700 border border-amber-200"
-    : "bg-gray-100 text-gray-600";
-  return <span className={`text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 ${cls}`}>{s}</span>;
+  const isHigh = s === "high" || s === "critical";
+  const isMed = s === "medium";
+  const style = isHigh ? { bg: "#ffebe9", color: "#cf222e", border: "#ffcdd8" }
+    : isMed ? { bg: "#fef9c3", color: "#854d0e", border: "#fde68a" }
+    : { bg: "#f6f8fa", color: "#57606a", border: "#d0d7de" };
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, fontFamily: "ui-monospace,monospace",
+      textTransform: "uppercase" as const, letterSpacing: "0.08em",
+      color: style.color, background: style.bg, border: `1px solid ${style.border}`,
+      borderRadius: 3, padding: "2px 5px"
+    }}>{s}</span>
+  );
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -53,160 +68,224 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
   const allFindings = [...winners, ...eliminated];
 
   return (
-    <main className="min-h-screen bg-[#f6f8fa] text-[#1f2328]"
-      style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-      <div className="max-w-[900px] mx-auto px-5 py-6 pb-16">
+    <main style={{ minHeight: "100vh", background: "#f6f8fa", color: "#1f2328", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
 
-        {/* back */}
-        <Link href="/prs" className="inline-flex items-center gap-1 text-[12px] text-gray-500 hover:text-blue-700 mb-5 no-underline">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-            <path d="M10 3L5 8l5 5" />
-          </svg>
-          PR Board
-        </Link>
+      {/* hero */}
+      <div style={{
+        background: "linear-gradient(135deg, #fff 0%, #f6f8fa 100%)",
+        borderBottom: "1px solid #d0d7de",
+        padding: "32px 40px 28px"
+      }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <Link href="/prs" style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontSize: 12, color: "#57606a", textDecoration: "none",
+            marginBottom: 20, fontFamily: "ui-monospace,monospace", letterSpacing: "0.03em"
+          }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M8 2L4 6l4 4" />
+            </svg>
+            PR Board
+          </Link>
 
-        {/* header */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 mb-4">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <a href={repoUrl} target="_blank" rel="noopener noreferrer"
-                  className="text-[20px] font-bold text-[#1f2328] hover:text-blue-700 no-underline">{fullRepo}</a>
-                <span className="text-gray-300">·</span>
-                <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                  className="text-[14px] font-mono text-blue-700 hover:underline no-underline">#{prNumber}</a>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+                <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="audit-repo-link" style={{
+                  fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1
+                }}>{fullRepo}</a>
+                <a href={prUrl} target="_blank" rel="noopener noreferrer" className="pr-pill">#{prNumber}</a>
               </div>
               {catalogEntry && (
-                <div className="text-[12px] text-gray-500">{catalogEntry.title}</div>
+                <div style={{ fontSize: 13, color: "#57606a", fontWeight: 400 }}>{catalogEntry.title}</div>
               )}
             </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              {audit?.lang && <span className="text-[11px] text-gray-500">{audit.lang}</span>}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              {audit?.lang && (
+                <span style={{ fontSize: 11, color: "#57606a", fontFamily: "ui-monospace,monospace" }}>{audit.lang}</span>
+              )}
               {audit?.stars != null && (
-                <span className="text-[11px] text-gray-400">&#9733; {audit.stars.toLocaleString()}</span>
+                <span style={{ fontSize: 11, color: "#6e7781" }}>&#9733; {audit.stars.toLocaleString()}</span>
               )}
               {audit?.audited_at && (
-                <span className="text-[10px] text-gray-400">
+                <span style={{ fontSize: 10, color: "#8c959f" }}>
                   Audited {new Date(audit.audited_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* no audit data fallback */}
+      {/* body */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 80px" }}>
+
         {!audit && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-8 text-center">
-            <div className="text-gray-400 text-[13px] mb-2">No audit data stored for this PR yet.</div>
-            <div className="text-gray-300 text-[11px]">Run <code className="font-mono">/security-audit {fullRepo}</code> to generate a full audit report.</div>
+          <div style={{
+            background: "#fff", border: "1px solid #d0d7de", borderRadius: 12,
+            padding: "48px 24px", textAlign: "center"
+          }}>
+            <div style={{ fontSize: 13, color: "#57606a", marginBottom: 8 }}>No audit data stored for this PR yet.</div>
+            <div style={{ fontSize: 11, color: "#8c959f", fontFamily: "ui-monospace,monospace" }}>
+              Run /security-audit {fullRepo}
+            </div>
           </div>
         )}
 
         {audit && (
           <>
             {/* files audited */}
-            <Section title="Files Audited" count={audit.files_audited.length}>
-              <table className="w-full text-[11px] border-collapse">
+            <Card title="Files Audited" count={audit.files_audited.length} style={{ marginBottom: 16 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                 <thead>
-                  <tr className="bg-[#f6f8fa] text-gray-400 text-left">
-                    <th className="px-3 py-2 font-medium" style={{ width: "30%" }}>File</th>
-                    <th className="px-3 py-2 font-medium" style={{ width: "20%" }}>Role</th>
-                    <th className="px-3 py-2 font-medium" style={{ width: "25%" }}>Patterns Checked</th>
-                    <th className="px-3 py-2 font-medium" style={{ width: "25%" }}>Result</th>
+                  <tr style={{ background: "#f6f8fa" }}>
+                    {["File", "Role", "Patterns Checked", "Result"].map(h => (
+                      <th key={h} style={{
+                        textAlign: "left", padding: "8px 14px",
+                        fontWeight: 600, color: "#57606a", fontSize: 10,
+                        letterSpacing: "0.04em", textTransform: "uppercase",
+                        borderBottom: "1px solid #d0d7de"
+                      }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {audit.files_audited.map((f: FileAudited, i: number) => (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="px-3 py-2 font-mono text-[10px] text-[#1f2328] break-all">{f.path}</td>
-                      <td className="px-3 py-2 text-gray-600">{f.role}</td>
-                      <td className="px-3 py-2 text-gray-500">{f.patterns}</td>
-                      <td className="px-3 py-2">
-                        <span className={f.result.toLowerCase().includes("clean") || f.result.toLowerCase().includes("no issue")
-                          ? "text-green-600" : "text-amber-600"}>{f.result}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {audit.files_audited.map((f: FileAudited, i: number) => {
+                    const lo = f.result.toLowerCase();
+                    const resultColor = lo.includes("clean") || lo.includes("no issue") ? "#1a7f37"
+                      : lo.includes("minor") || lo.includes("intended") ? "#57606a"
+                      : "#b45309";
+                    return (
+                      <tr key={i} style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
+                        <td style={{ padding: "10px 14px", fontFamily: "ui-monospace,monospace", fontSize: 10, color: "#24292f", wordBreak: "break-all" }}>{f.path}</td>
+                        <td style={{ padding: "10px 14px", color: "#57606a" }}>{f.role}</td>
+                        <td style={{ padding: "10px 14px", color: "#6e7781", fontSize: 10 }}>{f.patterns}</td>
+                        <td style={{ padding: "10px 14px", color: resultColor, fontWeight: 500 }}>{f.result}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            </Section>
+            </Card>
 
-            {/* tournament bracket */}
+            {/* tournament */}
             {allFindings.length > 0 && (
-              <Section title="Tournament Bracket" count={allFindings.length}>
-                <div className="divide-y divide-gray-100">
-                  {allFindings.map((f: Finding, i: number) => (
-                    <div key={i} className={`px-4 py-3 ${f.status === "winner" ? "bg-green-50/50" : ""}`}>
-                      <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {f.status === "winner"
-                            ? <span className="text-[9px] font-bold uppercase tracking-wide bg-green-600 text-white rounded px-1.5 py-0.5">Winner</span>
-                            : <span className="text-[9px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">Eliminated</span>}
-                          <span className="text-[12px] font-semibold text-[#1f2328]">{f.type}</span>
-                          <span className="font-mono text-[10px] text-gray-500">{f.file}:{f.line}</span>
+              <Card title="Tournament Bracket" count={allFindings.length} style={{ marginBottom: 16 }}>
+                <div>
+                  {allFindings.map((f: Finding, i: number) => {
+                    const total = (f.realness || 0) + (f.patchability || 0) + (f.mergability || 0);
+                    const isWinner = f.status === "winner";
+                    return (
+                      <div key={i} style={{
+                        padding: "16px 18px",
+                        borderTop: i > 0 ? "1px solid #f0f0f0" : undefined,
+                        background: isWinner ? "#f0fdf4" : undefined,
+                        borderLeft: isWinner ? "3px solid #1a7f37" : undefined,
+                      }}>
+                        {/* top row */}
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            {isWinner ? (
+                              <span style={{
+                                fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                                color: "#1a7f37", background: "#dafbe1", border: "1px solid #a7f3d0",
+                                borderRadius: 3, padding: "2px 7px", fontFamily: "ui-monospace,monospace"
+                              }}>Winner</span>
+                            ) : (
+                              <span style={{
+                                fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                                color: "#8c959f", background: "#f6f8fa", border: "1px solid #d0d7de",
+                                borderRadius: 3, padding: "2px 7px", fontFamily: "ui-monospace,monospace"
+                              }}>Eliminated</span>
+                            )}
+                            <span style={{ fontSize: 13, fontWeight: 700, color: isWinner ? "#1f2328" : "#57606a" }}>{f.type}</span>
+                            <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 10, color: "#8c959f" }}>{f.file}:{f.line}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {f.severity && severityPill(f.severity)}
+                            {f.confidence != null && confidencePill(f.confidence)}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {f.severity && severityPill(f.severity)}
-                          {f.confidence != null && confidencePill(f.confidence)}
+
+                        {f.code && (
+                          <pre style={{
+                            fontSize: 11, fontFamily: "ui-monospace,monospace",
+                            background: "#f6f8fa", border: "1px solid #d0d7de",
+                            borderRadius: 6, padding: "10px 14px",
+                            overflowX: "auto", margin: "0 0 10px",
+                            color: "#24292f", lineHeight: 1.5, whiteSpace: "pre-wrap"
+                          }}>{f.code}</pre>
+                        )}
+
+                        {f.fix && (
+                          <div style={{ fontSize: 12, color: "#57606a", marginBottom: 12, lineHeight: 1.5 }}>
+                            <span style={{ fontWeight: 600, color: "#1f2328" }}>Fix: </span>{f.fix}
+                          </div>
+                        )}
+
+                        <div style={{ display: "flex", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
+                          <div style={{ display: "flex", gap: 16, flex: 1, minWidth: 240, flexWrap: "wrap" }}>
+                            {[["Realness", f.realness], ["Patchability", f.patchability], ["Mergability", f.mergability]].map(([label, val]) => (
+                              <div key={label as string} style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 80 }}>
+                                <span style={{ fontSize: 9, color: "#8c959f", fontFamily: "ui-monospace,monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
+                                {scoreBar(val as number || 0)}
+                              </div>
+                            ))}
+                          </div>
+                          <span style={{
+                            fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em",
+                            color: isWinner ? "#1a7f37" : "#d0d7de",
+                            fontFamily: "ui-monospace,monospace"
+                          }}>{total}<span style={{ fontSize: 11, fontWeight: 500 }}>/30</span></span>
                         </div>
-                      </div>
 
-                      {f.code && (
-                        <pre className="text-[10px] rounded px-3 py-2 mb-2 overflow-x-auto"
-                          style={{ background: "#f6f8fa", border: "1px solid #e5e7eb", fontFamily: "ui-monospace,monospace" }}>
-                          {f.code}
-                        </pre>
-                      )}
-
-                      {f.fix && (
-                        <div className="text-[11px] text-gray-600 mb-2">
-                          <span className="font-semibold text-gray-700">Fix: </span>{f.fix}
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <ScoreTrio r={f.realness} p={f.patchability} m={f.mergability} />
-                        {f.status === "eliminated" && f.eliminated_reason && (
-                          <span className="text-[10px] text-gray-400 italic">{f.eliminated_reason}</span>
+                        {!isWinner && f.eliminated_reason && (
+                          <div style={{ marginTop: 8, fontSize: 11, color: "#8c959f", fontStyle: "italic" }}>{f.eliminated_reason}</div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </Section>
+              </Card>
             )}
 
             {/* winner summary */}
             {audit.winner_summary && (
-              <Section title="Why This PR Was Chosen">
-                <div className="px-4 py-3 text-[12px] text-gray-700 leading-relaxed">{audit.winner_summary}</div>
-              </Section>
+              <Card title="Why This PR Was Chosen" style={{ marginBottom: 16 }}>
+                <div style={{ padding: "16px 18px", fontSize: 13, color: "#24292f", lineHeight: 1.7 }}>
+                  {audit.winner_summary}
+                </div>
+              </Card>
             )}
 
-            {/* PR body */}
+            {/* pr body */}
             {audit.pr_body && (
-              <Section title="PR Body">
-                <div className="px-4 py-3">
-                  <pre className="text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed"
-                    style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-                    {audit.pr_body}
-                  </pre>
-                </div>
-              </Section>
+              <Card title="PR Body" style={{ marginBottom: 16 }}>
+                <pre style={{
+                  padding: "16px 18px", fontSize: 12, color: "#57606a",
+                  whiteSpace: "pre-wrap", lineHeight: 1.7, margin: 0,
+                  fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+                }}>{audit.pr_body}</pre>
+              </Card>
             )}
 
             {/* talking points */}
             {audit.talking_points.length > 0 && (
-              <Section title="Interview Talking Points" count={audit.talking_points.length}>
-                <ul className="px-4 py-3 space-y-2">
+              <Card title="Interview Talking Points" count={audit.talking_points.length} style={{ marginBottom: 16 }}>
+                <div style={{ padding: "12px 18px" }}>
                   {audit.talking_points.map((pt: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700">
-                      <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-blue-100 text-blue-700 text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
-                      <span>{pt}</span>
-                    </li>
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderTop: i > 0 ? "1px solid #f6f8fa" : undefined }}>
+                      <span style={{
+                        flexShrink: 0, width: 20, height: 20, borderRadius: "50%",
+                        background: "#dbeafe", color: "#0969da",
+                        fontSize: 9, fontWeight: 700, fontFamily: "ui-monospace,monospace",
+                        display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1
+                      }}>{i + 1}</span>
+                      <span style={{ fontSize: 12, color: "#57606a", lineHeight: 1.6 }}>{pt}</span>
+                    </div>
                   ))}
-                </ul>
-              </Section>
+                </div>
+              </Card>
             )}
           </>
         )}
@@ -217,28 +296,29 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+function Card({ title, count, children, style }: {
+  title: string; count?: number; children: React.ReactNode; style?: React.CSSProperties
+}) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-4">
-      <div className="px-4 py-2.5 bg-[#f6f8fa] border-b border-gray-200 flex items-center gap-2">
-        <span className="text-[12px] font-bold text-[#1f2328]">{title}</span>
+    <div style={{
+      background: "#fff", border: "1px solid #d0d7de",
+      borderRadius: 12, overflow: "hidden", ...style
+    }}>
+      <div style={{
+        padding: "10px 18px", background: "#f6f8fa",
+        borderBottom: "1px solid #d0d7de",
+        display: "flex", alignItems: "center", gap: 8
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#1f2328", letterSpacing: "0.01em" }}>{title}</span>
         {count != null && (
-          <span className="text-[10px] font-bold bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">{count}</span>
+          <span style={{
+            fontSize: 10, fontWeight: 600, color: "#57606a",
+            background: "#fff", border: "1px solid #d0d7de",
+            borderRadius: 20, padding: "1px 8px"
+          }}>{count}</span>
         )}
       </div>
       {children}
-    </div>
-  );
-}
-
-function ScoreTrio({ r, p, m }: { r: number; p: number; m: number }) {
-  const total = (r || 0) + (p || 0) + (m || 0);
-  return (
-    <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-[10px] text-gray-400">Realness {scoreBar(r || 0)}</span>
-      <span className="text-[10px] text-gray-400">Patchability {scoreBar(p || 0)}</span>
-      <span className="text-[10px] text-gray-400">Mergability {scoreBar(m || 0)}</span>
-      <span className="text-[10px] font-bold text-gray-600">Total {total}/30</span>
     </div>
   );
 }
