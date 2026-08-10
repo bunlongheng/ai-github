@@ -226,66 +226,59 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
             PR Board
           </Link>
 
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-              {/* Repo owner avatar */}
-              <div style={{ position: "relative", flexShrink: 0 }}>
-                <Image
-                  src={`https://github.com/${owner}.png?size=80`}
-                  alt={owner} width={56} height={56} unoptimized
-                  style={{ borderRadius: 12, border: "2px solid #d0d7de", display: "block" }}
-                />
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Repo owner avatar */}
+            <Image
+              src={`https://github.com/${owner}.png?size=80`}
+              alt={owner} width={48} height={48} unoptimized
+              style={{ borderRadius: 10, border: "2px solid #d0d7de", display: "block", flexShrink: 0 }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* row 1: repo name + PR pill */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
+                <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="audit-repo-link" style={{
+                  fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.2
+                }}>{fullRepo}</a>
+                <a href={prUrl} target="_blank" rel="noopener noreferrer" className="pr-pill">#{prNumber}</a>
               </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                  <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="audit-repo-link" style={{
-                    fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1
-                  }}>{fullRepo}</a>
-                  <a href={prUrl} target="_blank" rel="noopener noreferrer" className="pr-pill">#{prNumber}</a>
-                </div>
-                {catalogEntry && (
-                  <div style={{ fontSize: 13, color: "#57606a", fontWeight: 400, marginBottom: 8 }}>{catalogEntry.title}</div>
+              {/* row 2: PR title */}
+              {catalogEntry && (
+                <div style={{ fontSize: 12, color: "#57606a", marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{catalogEntry.title}</div>
+              )}
+              {/* row 3: stats + author inline */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {(prMeta?.repoStars ?? audit?.stars) != null && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#fff8c5", border: "1px solid #e3b341", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 600, color: "#9a6700" }}>
+                    &#9733; {(prMeta?.repoStars ?? audit?.stars ?? 0).toLocaleString()}
+                  </span>
                 )}
-                {prMeta?.repoDescription && (
-                  <div style={{ fontSize: 12, color: "#57606a", marginBottom: 8 }}>{prMeta.repoDescription}</div>
+                {prMeta?.repoForks != null && prMeta.repoForks > 0 && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 600, color: "#57606a" }}>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="#57606a"><path d="M5 3.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm0 2.122a2.25 2.25 0 10-1.5 0v.878A2.25 2.25 0 005.75 8.5h1.5v2.128a2.251 2.251 0 101.5 0V8.5h1.5a2.25 2.25 0 002.25-2.25v-.878a2.25 2.25 0 10-1.5 0v.878a.75.75 0 01-.75.75h-4.5A.75.75 0 015 6.25v-.878zm3.75 7.378a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm3-8.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+                    {prMeta.repoForks.toLocaleString()}
+                  </span>
                 )}
-                {/* Author chip */}
+                {(prMeta?.repoLang ?? audit?.lang) && (
+                  <span style={{ fontSize: 10, color: "#57606a", fontFamily: "ui-monospace,monospace", background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "2px 7px" }}>
+                    {prMeta?.repoLang ?? audit?.lang}
+                  </span>
+                )}
+                {audit?.audited_at && (
+                  <span style={{ fontSize: 10, color: "#8c959f" }}>
+                    Audited {new Date(audit.audited_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                )}
                 {prMeta?.authorLogin && (
                   <a href={prMeta.authorUrl ?? `https://github.com/${prMeta.authorLogin}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none",
-                      background: "#fff", border: "1px solid #d0d7de", borderRadius: 20, padding: "3px 10px 3px 4px" }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none",
+                      background: "#fff", border: "1px solid #d0d7de", borderRadius: 20, padding: "2px 8px 2px 3px" }}>
                     <Image src={prMeta.authorAvatar ?? `https://github.com/${prMeta.authorLogin}.png?size=28`}
-                      alt={prMeta.authorLogin} width={20} height={20} unoptimized
+                      alt={prMeta.authorLogin} width={16} height={16} unoptimized
                       style={{ borderRadius: "50%", display: "block" }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#1f2328" }}>@{prMeta.authorLogin}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#1f2328" }}>@{prMeta.authorLogin}</span>
                   </a>
                 )}
               </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-              {(prMeta?.repoStars ?? audit?.stars) != null && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff8c5", border: "1px solid #e3b341", borderRadius: 6, padding: "3px 8px" }}>
-                  <span style={{ color: "#9a6700", fontSize: 12 }}>&#9733;</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#9a6700" }}>{(prMeta?.repoStars ?? audit?.stars ?? 0).toLocaleString()}</span>
-                </div>
-              )}
-              {(prMeta?.repoForks) != null && prMeta.repoForks > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "3px 8px" }}>
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="#57606a"><path d="M5 3.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm0 2.122a2.25 2.25 0 10-1.5 0v.878A2.25 2.25 0 005.75 8.5h1.5v2.128a2.251 2.251 0 101.5 0V8.5h1.5a2.25 2.25 0 002.25-2.25v-.878a2.25 2.25 0 10-1.5 0v.878a.75.75 0 01-.75.75h-4.5A.75.75 0 015 6.25v-.878zm3.75 7.378a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm3-8.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#57606a" }}>{prMeta.repoForks.toLocaleString()}</span>
-                </div>
-              )}
-              {(prMeta?.repoLang ?? audit?.lang) && (
-                <span style={{ fontSize: 11, color: "#57606a", fontFamily: "ui-monospace,monospace",
-                  background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "3px 8px" }}>
-                  {prMeta?.repoLang ?? audit?.lang}
-                </span>
-              )}
-              {audit?.audited_at && (
-                <span style={{ fontSize: 10, color: "#8c959f" }}>
-                  Audited {new Date(audit.audited_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </span>
-              )}
             </div>
           </div>
         </div>
