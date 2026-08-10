@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { fetchLivePRs, PR_CATALOG } from "@/lib/prs";
 import type { PRStatus, PRCategory, RepoType } from "@/lib/prs";
 
@@ -311,12 +312,15 @@ export default async function PRsBoard() {
                           </a>
                         </td>
                         <td className="px-2.5 py-2 overflow-hidden align-top">
-                          <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 min-w-0 no-underline group">
+                          <div className="flex items-center gap-1 min-w-0 group">
                             <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
-                            <span className="flex-1 min-w-0 truncate text-[#1f2328] group-hover:text-blue-700 group-hover:underline">{displayTitle}</span>
-                            <span className="shrink-0 text-blue-700 text-[10px]">&#8599;</span>
-                          </a>
+                            <Link href={`/prs/${org}/${repoName}/${pr.number}`}
+                              className="flex-1 min-w-0 truncate text-[#1f2328] hover:text-blue-700 hover:underline no-underline text-[11px]">
+                              {displayTitle}
+                            </Link>
+                            <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                              className="shrink-0 text-blue-700 text-[10px] hover:opacity-70 ml-0.5">&#8599;</a>
+                          </div>
                         </td>
                         <td className="px-2 py-2 overflow-hidden align-top">
                           <div className="flex flex-col items-start gap-0.5">
