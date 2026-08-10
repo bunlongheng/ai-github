@@ -239,7 +239,7 @@ export default async function PRsBoard() {
             ]).map(t => {
               const sc = STATUS_COLOR[t.status];
               return (
-                <div key={t.label} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <a key={t.label} href={`#${t.status}`} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, textDecoration: "none", cursor: "pointer", transition: "opacity 0.15s" }} className="hero-stat-card">
                   <div>
                     <div style={{ fontSize: 30, fontWeight: 800, color: sc.num, lineHeight: 1 }}>{t.val}</div>
                     <div style={{ fontSize: 11, color: sc.text, marginTop: 4, fontWeight: 600, letterSpacing: "0.03em" }}>{t.label}</div>
@@ -250,7 +250,7 @@ export default async function PRsBoard() {
                     <path d={linePath} fill="none" stroke={sc.text} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                     <circle cx={todayPt.x} cy={todayPt.y} r="3" fill={sc.text} />
                   </svg>
-                </div>
+                </a>
               );
             })}
           </div>
@@ -267,7 +267,7 @@ export default async function PRsBoard() {
             .filter(x => x.n > 0);
 
           return (
-            <div key={g.status} style={{ background: "#fff", border: "1px solid #d0d7de", borderRadius: 12, overflow: "hidden", marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div key={g.status} id={g.status} style={{ background: "#fff", border: "1px solid #d0d7de", borderRadius: 12, overflow: "hidden", marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", scrollMarginTop: 24 }}>
               {/* group header */}
               <div style={{ padding: "11px 18px", background: HGRAD[g.status], display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "0.01em" }}>{STATUS_LABEL[g.status]}</span>

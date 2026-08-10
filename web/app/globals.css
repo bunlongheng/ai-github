@@ -21,3 +21,4 @@
 .audit-repo-link:hover { color: #0969da; }
 
 .tech-chip:hover { border-color: #0969da !important; }
+.hero-stat-card:hover { opacity: 0.85; }
