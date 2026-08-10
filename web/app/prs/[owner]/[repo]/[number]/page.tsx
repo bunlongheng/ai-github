@@ -296,7 +296,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
         {/* tech stack */}
         {techStack.length > 0 && (
-          <Card title="Tech Stack" count={techStack.length} style={{ marginBottom: 16 }}>
+          <Card title="Tech Stack" count={techStack.length} color="blue" style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 18px" }}>
               {techStack.map((t: TechStackEntry, i: number) => (
                 <a key={i} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer"
@@ -345,7 +345,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
         {audit && (
           <>
             {/* files audited */}
-            {audit.files_audited.length > 0 && (<Card title="Files Audited" count={audit.files_audited.length} style={{ marginBottom: 16 }}>
+            {audit.files_audited.length > 0 && (<Card title="Files Audited" count={audit.files_audited.length} color="purple" style={{ marginBottom: 16 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                 <thead>
                   <tr style={{ background: "#f6f8fa" }}>
@@ -380,7 +380,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
             {/* tournament */}
             {allFindings.length > 0 && (
-              <Card title="Tournament Bracket" count={allFindings.length} style={{ marginBottom: 16 }}>
+              <Card title="Tournament Bracket" count={allFindings.length} color="amber" style={{ marginBottom: 16 }}>
                 <div>
                   {allFindings.map((f: Finding, i: number) => {
                     const total = (f.realness || 0) + (f.patchability || 0) + (f.mergability || 0);
@@ -461,7 +461,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
             {/* winner summary */}
             {audit.winner_summary && (
-              <Card title="Why This PR Was Chosen" style={{ marginBottom: 16 }}>
+              <Card title="Why This PR Was Chosen" color="green" style={{ marginBottom: 16 }}>
                 <div style={{ padding: "16px 18px", fontSize: 13, color: "#24292f", lineHeight: 1.7 }}>
                   {audit.winner_summary}
                 </div>
@@ -470,7 +470,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
             {/* pr body */}
             {audit.pr_body && (
-              <Card title="PR Body" style={{ marginBottom: 16 }}>
+              <Card title="PR Body" color="teal" style={{ marginBottom: 16 }}>
                 <pre style={{
                   padding: "16px 18px", fontSize: 12, color: "#57606a",
                   whiteSpace: "pre-wrap", lineHeight: 1.7, margin: 0,
@@ -481,7 +481,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
             {/* talking points */}
             {audit.talking_points.length > 0 && (
-              <Card title="Interview Talking Points" count={audit.talking_points.length} style={{ marginBottom: 16 }}>
+              <Card title="Interview Talking Points" count={audit.talking_points.length} color="indigo" style={{ marginBottom: 16 }}>
                 <div style={{ padding: "12px 18px" }}>
                   {audit.talking_points.map((pt: string, i: number) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderTop: i > 0 ? "1px solid #f6f8fa" : undefined }}>
@@ -506,24 +506,38 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function Card({ title, count, children, style }: {
-  title: string; count?: number; children: React.ReactNode; style?: React.CSSProperties
+const CARD_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  blue:   { bg: "#eff6ff", border: "#bfdbfe", text: "#1d4ed8" },
+  purple: { bg: "#faf5ff", border: "#e9d5ff", text: "#7c3aed" },
+  amber:  { bg: "#fffbeb", border: "#fde68a", text: "#92400e" },
+  green:  { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
+  teal:   { bg: "#f0fdfa", border: "#99f6e4", text: "#0f766e" },
+  indigo: { bg: "#eef2ff", border: "#c7d2fe", text: "#4338ca" },
+  gray:   { bg: "#f6f8fa", border: "#d0d7de", text: "#57606a" },
+};
+
+function Card({ title, count, children, style, color = "gray" }: {
+  title: string; count?: number; children: React.ReactNode;
+  style?: React.CSSProperties; color?: keyof typeof CARD_COLORS;
 }) {
+  const c = CARD_COLORS[color] ?? CARD_COLORS.gray;
   return (
     <div style={{
-      background: "#fff", border: "1px solid #d0d7de",
-      borderRadius: 12, overflow: "hidden", ...style
+      background: "#fff", border: `1px solid ${c.border}`,
+      borderRadius: 12, overflow: "hidden",
+      boxShadow: `0 1px 3px ${c.border}40`, ...style
     }}>
       <div style={{
-        padding: "10px 18px", background: "#f6f8fa",
-        borderBottom: "1px solid #d0d7de",
+        padding: "10px 18px", background: c.bg,
+        borderBottom: `1px solid ${c.border}`,
+        borderLeft: `4px solid ${c.text}`,
         display: "flex", alignItems: "center", gap: 8
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#1f2328", letterSpacing: "0.01em" }}>{title}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: c.text, letterSpacing: "0.01em" }}>{title}</span>
         {count != null && (
           <span style={{
-            fontSize: 10, fontWeight: 600, color: "#57606a",
-            background: "#fff", border: "1px solid #d0d7de",
+            fontSize: 10, fontWeight: 600, color: c.text,
+            background: "#fff", border: `1px solid ${c.border}`,
             borderRadius: 20, padding: "1px 8px"
           }}>{count}</span>
         )}
