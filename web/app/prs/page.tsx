@@ -223,9 +223,9 @@ export default async function PRsBoard() {
       <div style={{ background: "linear-gradient(135deg,#fff 0%,#f6f8fa 100%)", borderBottom: "1px solid #d0d7de", padding: "32px 0 28px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-            <Image src="/logo.png" alt="AI GitHub Bot" width={44} height={44} style={{ borderRadius: 10 }} unoptimized />
+            <Image src="/logo.png" alt="AI Security Bot" width={44} height={44} style={{ borderRadius: 10 }} unoptimized />
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1, color: "#1f2328" }}>AI GitHub</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1, color: "#1f2328" }}>AI Security</h1>
               <div style={{ fontSize: 12, color: "#57606a", marginTop: 3 }}>{total} PRs submitted &middot; {mergedCount} merged</div>
             </div>
           </div>
