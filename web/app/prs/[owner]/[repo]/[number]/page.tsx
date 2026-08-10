@@ -1,7 +1,141 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getAuditReport } from "@/lib/db";
-import type { Finding, FileAudited } from "@/lib/db";
+import type { Finding, FileAudited, TechStackEntry } from "@/lib/db";
 import { PR_CATALOG } from "@/lib/prs";
+
+// ─── lang -> Simple Icons slug ────────────────────────────────────────────────
+
+const LANG_SLUG: Record<string, { slug: string; url: string }> = {
+  Go:         { slug: "go",         url: "https://go.dev" },
+  Python:     { slug: "python",     url: "https://python.org" },
+  TypeScript: { slug: "typescript", url: "https://typescriptlang.org" },
+  JavaScript: { slug: "javascript", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
+  Rust:       { slug: "rust",       url: "https://rust-lang.org" },
+  Java:       { slug: "java",       url: "https://java.com" },
+  Ruby:       { slug: "ruby",       url: "https://ruby-lang.org" },
+  PHP:        { slug: "php",        url: "https://php.net" },
+  "C++":      { slug: "cplusplus",  url: "https://isocpp.org" },
+  "C#":       { slug: "csharp",     url: "https://dotnet.microsoft.com" },
+  Swift:      { slug: "swift",      url: "https://swift.org" },
+  Kotlin:     { slug: "kotlin",     url: "https://kotlinlang.org" },
+  Dart:       { slug: "dart",       url: "https://dart.dev" },
+  Elixir:     { slug: "elixir",     url: "https://elixir-lang.org" },
+  Haskell:    { slug: "haskell",    url: "https://haskell.org" },
+  C:          { slug: "c",          url: "https://en.wikipedia.org/wiki/C_(programming_language)" },
+  Scala:      { slug: "scala",      url: "https://scala-lang.org" },
+  Shell:      { slug: "gnubash",    url: "https://gnu.org/software/bash/" },
+  Dockerfile: { slug: "docker",     url: "https://docker.com" },
+};
+
+// ─── fetch PR author + repo info from GitHub API ──────────────────────────────
+
+async function fetchGitHubPRMeta(owner: string, repo: string, prNumber: number) {
+  const headers = { "User-Agent": "ai-security-audit/1.0", Accept: "application/vnd.github+json" };
+  try {
+    const [prRes, repoRes] = await Promise.all([
+      fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, { headers, next: { revalidate: 3600 } }),
+      fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers, next: { revalidate: 3600 } }),
+    ]);
+    const pr = prRes.ok ? await prRes.json() : null;
+    const repoData = repoRes.ok ? await repoRes.json() : null;
+    return {
+      authorLogin: pr?.user?.login as string | null ?? null,
+      authorAvatar: pr?.user?.avatar_url as string | null ?? null,
+      authorUrl: pr?.user?.html_url as string | null ?? null,
+      repoDescription: repoData?.description as string | null ?? null,
+      repoStars: repoData?.stargazers_count as number | null ?? null,
+      repoLang: repoData?.language as string | null ?? null,
+      repoForks: repoData?.forks_count as number | null ?? null,
+    };
+  } catch { return null; }
+}
+
+// ─── fetch tech stack from GitHub API ─────────────────────────────────────────
+
+async function fetchGitHubTechStack(owner: string, repo: string): Promise<TechStackEntry[]> {
+  const headers: Record<string, string> = { "User-Agent": "ai-security-audit/1.0", Accept: "application/vnd.github+json" };
+
+  // 1. Languages breakdown
+  let langBytes: Record<string, number> = {};
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/languages`, { headers, next: { revalidate: 86400 } });
+    if (r.ok) langBytes = await r.json();
+  } catch {}
+
+  const total = Object.values(langBytes).reduce((a, b) => a + b, 0) || 1;
+  const stack: TechStackEntry[] = Object.entries(langBytes)
+    .sort((a, b) => b[1] - a[1])
+    .map(([lang, bytes]) => ({
+      name: lang,
+      slug: LANG_SLUG[lang]?.slug,
+      url: LANG_SLUG[lang]?.url,
+      category: "Language",
+      version: `${Math.round((bytes / total) * 100)}%`,
+    }));
+
+  // 2. Try to get runtime/framework version from manifest
+  const tryFetch = async (path: string) => {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers, next: { revalidate: 86400 } });
+      if (!r.ok) return null;
+      const j = await r.json();
+      return Buffer.from(j.content, "base64").toString("utf8");
+    } catch { return null; }
+  };
+
+  const primaryLang = Object.keys(langBytes)[0] ?? "";
+
+  if (primaryLang === "Go") {
+    const gomod = await tryFetch("go.mod");
+    if (gomod) {
+      const m = gomod.match(/^go\s+([\d.]+)/m);
+      if (m) {
+        const entry = stack.find(e => e.name === "Go");
+        if (entry) { entry.version = `go ${m[1]} (${entry.version})`; }
+        stack.unshift({ name: "Go", slug: "go", url: "https://go.dev", category: "Runtime", version: `go ${m[1]}` });
+        // deduplicate
+        const seen = new Set<string>();
+        return stack.filter(e => { const k = e.name + e.category; if (seen.has(k)) return false; seen.add(k); return true; });
+      }
+    }
+  }
+
+  if (primaryLang === "Python") {
+    const pyproj = await tryFetch("pyproject.toml");
+    if (pyproj) {
+      const m = pyproj.match(/python_requires\s*=\s*["']([^"']+)["']/);
+      if (m) {
+        const entry = stack.find(e => e.name === "Python");
+        if (entry) entry.version = `${m[1]} (${entry.version})`;
+      }
+    }
+  }
+
+  if (primaryLang === "TypeScript" || primaryLang === "JavaScript") {
+    const pkg = await tryFetch("package.json");
+    if (pkg) {
+      try {
+        const j = JSON.parse(pkg);
+        const nodeVer = j.engines?.node ?? j.volta?.node ?? null;
+        if (nodeVer) stack.push({ name: "Node.js", slug: "nodedotjs", url: "https://nodejs.org", category: "Runtime", version: nodeVer });
+        const frameworks: Array<[string, string, string, string]> = [
+          ["next",    "nextdotjs",   "https://nextjs.org",     "Framework"],
+          ["react",   "react",       "https://react.dev",      "Framework"],
+          ["vue",     "vuedotjs",    "https://vuejs.org",      "Framework"],
+          ["express", "express",     "https://expressjs.com",  "Framework"],
+          ["fastify", "fastify",     "https://fastify.dev",    "Framework"],
+        ];
+        for (const [pkg2, slug, url, cat] of frameworks) {
+          const ver = j.dependencies?.[pkg2] ?? j.devDependencies?.[pkg2];
+          if (ver) stack.push({ name: pkg2.charAt(0).toUpperCase() + pkg2.slice(1), slug, url, category: cat, version: ver });
+        }
+      } catch {}
+    }
+  }
+
+  return stack.slice(0, 10);
+}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,6 +193,10 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
   const catalogEntry = PR_CATALOG.find(p => p.repo === fullRepo && p.number === prNumber);
   const audit = getAuditReport(fullRepo, prNumber);
+  const techStackPromise = audit?.tech_stack?.length
+    ? Promise.resolve(audit.tech_stack)
+    : fetchGitHubTechStack(owner, repoName);
+  const [techStack, prMeta] = await Promise.all([techStackPromise, fetchGitHubPRMeta(owner, repoName, prNumber)]);
 
   const prUrl = `https://github.com/${fullRepo}/pull/${prNumber}`;
   const repoUrl = `https://github.com/${fullRepo}`;
@@ -89,23 +227,59 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
           </Link>
 
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="audit-repo-link" style={{
-                  fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1
-                }}>{fullRepo}</a>
-                <a href={prUrl} target="_blank" rel="noopener noreferrer" className="pr-pill">#{prNumber}</a>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              {/* Repo owner avatar */}
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <Image
+                  src={`https://github.com/${owner}.png?size=80`}
+                  alt={owner} width={56} height={56} unoptimized
+                  style={{ borderRadius: 12, border: "2px solid #d0d7de", display: "block" }}
+                />
               </div>
-              {catalogEntry && (
-                <div style={{ fontSize: 13, color: "#57606a", fontWeight: 400 }}>{catalogEntry.title}</div>
-              )}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+                  <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="audit-repo-link" style={{
+                    fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1
+                  }}>{fullRepo}</a>
+                  <a href={prUrl} target="_blank" rel="noopener noreferrer" className="pr-pill">#{prNumber}</a>
+                </div>
+                {catalogEntry && (
+                  <div style={{ fontSize: 13, color: "#57606a", fontWeight: 400, marginBottom: 8 }}>{catalogEntry.title}</div>
+                )}
+                {prMeta?.repoDescription && (
+                  <div style={{ fontSize: 12, color: "#57606a", marginBottom: 8 }}>{prMeta.repoDescription}</div>
+                )}
+                {/* Author chip */}
+                {prMeta?.authorLogin && (
+                  <a href={prMeta.authorUrl ?? `https://github.com/${prMeta.authorLogin}`} target="_blank" rel="noopener noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none",
+                      background: "#fff", border: "1px solid #d0d7de", borderRadius: 20, padding: "3px 10px 3px 4px" }}>
+                    <Image src={prMeta.authorAvatar ?? `https://github.com/${prMeta.authorLogin}.png?size=28`}
+                      alt={prMeta.authorLogin} width={20} height={20} unoptimized
+                      style={{ borderRadius: "50%", display: "block" }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#1f2328" }}>@{prMeta.authorLogin}</span>
+                  </a>
+                )}
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              {audit?.lang && (
-                <span style={{ fontSize: 11, color: "#57606a", fontFamily: "ui-monospace,monospace" }}>{audit.lang}</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+              {(prMeta?.repoStars ?? audit?.stars) != null && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff8c5", border: "1px solid #e3b341", borderRadius: 6, padding: "3px 8px" }}>
+                  <span style={{ color: "#9a6700", fontSize: 12 }}>&#9733;</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#9a6700" }}>{(prMeta?.repoStars ?? audit?.stars ?? 0).toLocaleString()}</span>
+                </div>
               )}
-              {audit?.stars != null && (
-                <span style={{ fontSize: 11, color: "#6e7781" }}>&#9733; {audit.stars.toLocaleString()}</span>
+              {(prMeta?.repoForks) != null && prMeta.repoForks > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "3px 8px" }}>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="#57606a"><path d="M5 3.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm0 2.122a2.25 2.25 0 10-1.5 0v.878A2.25 2.25 0 005.75 8.5h1.5v2.128a2.251 2.251 0 101.5 0V8.5h1.5a2.25 2.25 0 002.25-2.25v-.878a2.25 2.25 0 10-1.5 0v.878a.75.75 0 01-.75.75h-4.5A.75.75 0 015 6.25v-.878zm3.75 7.378a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm3-8.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#57606a" }}>{prMeta.repoForks.toLocaleString()}</span>
+                </div>
+              )}
+              {(prMeta?.repoLang ?? audit?.lang) && (
+                <span style={{ fontSize: 11, color: "#57606a", fontFamily: "ui-monospace,monospace",
+                  background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 6, padding: "3px 8px" }}>
+                  {prMeta?.repoLang ?? audit?.lang}
+                </span>
               )}
               {audit?.audited_at && (
                 <span style={{ fontSize: 10, color: "#8c959f" }}>
@@ -119,6 +293,42 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
       {/* body */}
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 80px" }}>
+
+        {/* tech stack */}
+        {techStack.length > 0 && (
+          <Card title="Tech Stack" count={techStack.length} style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 18px" }}>
+              {techStack.map((t: TechStackEntry, i: number) => (
+                <a key={i} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer"
+                  style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 7,
+                    background: "#f6f8fa", border: "1px solid #d0d7de", borderRadius: 8,
+                    padding: "6px 11px", transition: "border-color 0.15s" }}
+                  className="tech-chip">
+                  {t.slug ? (
+                    <img src={`https://cdn.simpleicons.org/${t.slug}`} width={14} height={14} alt={t.name}
+                      style={{ flexShrink: 0, objectFit: "contain" }} />
+                  ) : (
+                    <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#d0d7de",
+                      fontSize: 8, fontWeight: 700, color: "#57606a", display: "flex",
+                      alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {t.name[0]}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1f2328" }}>{t.name}</span>
+                  {t.version && (
+                    <span style={{ fontSize: 10, color: "#57606a", fontFamily: "ui-monospace,monospace",
+                      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 4, padding: "1px 5px" }}>
+                      {t.version}
+                    </span>
+                  )}
+                  {t.category && (
+                    <span style={{ fontSize: 9, color: "#8c959f", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t.category}</span>
+                  )}
+                </a>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {!audit && (
           <div style={{

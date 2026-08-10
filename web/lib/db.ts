@@ -16,12 +16,23 @@ export function getDb(): Database.Database {
 }
 
 function runMigrations(db: Database.Database) {
+  db.exec(`CREATE TABLE IF NOT EXISTS _migrations (name TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))`);
+  const ran = new Set((db.prepare("SELECT name FROM _migrations").all() as { name: string }[]).map(r => r.name));
   const files = fs.readdirSync(MIGRATIONS_DIR).sort();
   for (const file of files) {
-    if (!file.endsWith(".sql")) continue;
+    if (!file.endsWith(".sql") || ran.has(file)) continue;
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
     db.exec(sql);
+    db.prepare("INSERT INTO _migrations (name) VALUES (?)").run(file);
   }
+}
+
+export interface TechStackEntry {
+  name: string;
+  slug?: string;
+  url?: string;
+  category?: string;
+  version?: string;
 }
 
 export interface AuditReport {
@@ -35,6 +46,7 @@ export interface AuditReport {
   winner_summary: string | null;
   pr_body: string | null;
   talking_points: string[];
+  tech_stack: TechStackEntry[];
 }
 
 export interface FileAudited {
@@ -68,19 +80,21 @@ export function getAuditReport(repo: string, prNumber: number): AuditReport | nu
     files_audited: JSON.parse((row.files_audited as string) || "[]"),
     findings: JSON.parse((row.findings as string) || "[]"),
     talking_points: JSON.parse((row.talking_points as string) || "[]"),
+    tech_stack: JSON.parse((row.tech_stack as string) || "[]"),
   } as AuditReport;
 }
 
 export function upsertAuditReport(report: Omit<AuditReport, "audited_at">) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO audit_reports (repo, pr_number, lang, stars, files_audited, findings, winner_summary, pr_body, talking_points)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO audit_reports (repo, pr_number, lang, stars, files_audited, findings, winner_summary, pr_body, talking_points, tech_stack)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (repo, pr_number) DO UPDATE SET
       lang = excluded.lang, stars = excluded.stars,
       files_audited = excluded.files_audited, findings = excluded.findings,
       winner_summary = excluded.winner_summary, pr_body = excluded.pr_body,
       talking_points = excluded.talking_points,
+      tech_stack = excluded.tech_stack,
       audited_at = datetime('now')
   `).run(
     report.repo, report.pr_number, report.lang, report.stars,
@@ -88,6 +102,7 @@ export function upsertAuditReport(report: Omit<AuditReport, "audited_at">) {
     JSON.stringify(report.findings),
     report.winner_summary, report.pr_body,
     JSON.stringify(report.talking_points),
+    JSON.stringify((report as AuditReport).tech_stack || []),
   );
 }
 

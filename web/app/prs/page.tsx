@@ -207,76 +207,75 @@ export default async function PRsBoard() {
   const areaPath = `${linePath} L${chartPts[chartPts.length - 1].x.toFixed(1)},${CH} L${chartPts[0].x.toFixed(1)},${CH} Z`;
   const todayPt = chartPts[chartPts.length - 1];
 
-  return (
-    <main className="min-h-screen bg-[#f6f8fa] text-[#1f2328]"
-      style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-      <div className="max-w-[1100px] mx-auto px-5 py-7 pb-16">
+  const STATUS_COLOR: Record<PRStatus, { bg: string; border: string; text: string; num: string; sub: string }> = {
+    open:   { bg: "#eff6ff", border: "#bfdbfe", text: "#1d4ed8", num: "#1d4ed8", sub: "#3b82f6" },
+    merged: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d", num: "#15803d", sub: "#22c55e" },
+    closed: { bg: "#fff1f2", border: "#fecdd3", text: "#be123c", num: "#be123c", sub: "#f43f5e" },
+    draft:  { bg: "#f9fafb", border: "#e5e7eb", text: "#374151", num: "#374151", sub: "#9ca3af" },
+  };
 
-        {/* ── Header ── */}
-        <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="AI GitHub Bot" width={52} height={52} className="rounded-xl shrink-0" unoptimized />
+  return (
+    <main style={{ minHeight: "100vh", background: "#f6f8fa", color: "#1f2328", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+
+      {/* ── Hero ── */}
+      <div style={{ background: "linear-gradient(135deg,#fff 0%,#f6f8fa 100%)", borderBottom: "1px solid #d0d7de", padding: "32px 40px 28px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <Image src="/logo.png" alt="AI GitHub Bot" width={44} height={44} style={{ borderRadius: 10 }} unoptimized />
             <div>
-              <h1 className="text-3xl font-bold text-[#1f2328] leading-none">AI GitHub</h1>
-              <div className="text-[13px] text-gray-500 mt-1">
-                {total} PRs submitted &middot; {mergedCount} merged
-              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.1, color: "#1f2328" }}>AI GitHub</h1>
+              <div style={{ fontSize: 12, color: "#57606a", marginTop: 3 }}>{total} PRs submitted &middot; {mergedCount} merged</div>
             </div>
           </div>
-        </div>
 
-        {/* ── Hero: Open / Merged / Closed today ── */}
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          {([
-            { grad: "from-blue-600 to-blue-800",     icon: "open",   val: counts.open,   label: "Open",     sub: openToday > 0   ? `+${openToday} today`   : "" },
-            { grad: "from-green-600 to-emerald-700", icon: "merged", val: mergedCount,   label: "Merged",   sub: mergedToday > 0 ? `+${mergedToday} today`  : "" },
-            { grad: "from-rose-500 to-rose-700",     icon: "closed", val: closedCount,   label: "Rejected", sub: closedToday > 0 ? `+${closedToday} today`  : "" },
-          ] as const).map((t) => (
-            <div key={t.label} className={`rounded-[10px] px-3 py-3 text-white shadow-sm bg-gradient-to-br ${t.grad} flex items-stretch gap-2`}>
-              <div className="flex-1 min-w-0">
-                <div className="text-[28px] font-bold leading-none">{t.val}</div>
-                <div className="text-[10px] text-white/80 mt-0.5">{t.label}</div>
-              </div>
-              <div className="w-[72px] shrink-0 flex flex-col justify-between">
-                <svg viewBox={`0 0 ${CW} ${CH}`} preserveAspectRatio="none" className="w-full" style={{ height: 32, display: "block" }}>
-                  <path d={areaPath} fill="rgba(255,255,255,0.12)" />
-                  <path d={linePath} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-                </svg>
-                {t.sub && <div className="text-[8px] text-white/60 text-right leading-none mt-0.5">{t.sub}</div>}
-              </div>
-            </div>
-          ))}
+          {/* stat cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+            {([
+              { status: "open"   as PRStatus, val: counts.open,  label: "Open",     sub: openToday   > 0 ? `+${openToday} today`   : "" },
+              { status: "merged" as PRStatus, val: mergedCount,  label: "Merged",   sub: mergedToday > 0 ? `+${mergedToday} today`  : "" },
+              { status: "closed" as PRStatus, val: closedCount,  label: "Rejected", sub: closedToday > 0 ? `+${closedToday} today`  : "" },
+            ]).map(t => {
+              const sc = STATUS_COLOR[t.status];
+              return (
+                <div key={t.label} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: sc.num, lineHeight: 1 }}>{t.val}</div>
+                    <div style={{ fontSize: 11, color: sc.text, marginTop: 4, fontWeight: 600, letterSpacing: "0.03em" }}>{t.label}</div>
+                    {t.sub && <div style={{ fontSize: 10, color: sc.sub, marginTop: 2 }}>{t.sub}</div>}
+                  </div>
+                  <svg viewBox={`0 0 ${CW} ${CH}`} preserveAspectRatio="none" style={{ width: 80, height: 36, flexShrink: 0, opacity: 0.5 }}>
+                    <path d={areaPath} fill={sc.border} />
+                    <path d={linePath} fill="none" stroke={sc.text} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                    <circle cx={todayPt.x} cy={todayPt.y} r="3" fill={sc.text} />
+                  </svg>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      </div>
 
-        {/* ══ SECTION: PR BOARD ══ */}
-        <div className="flex items-center gap-2 mb-3">
-          <Icon name="pipeline" className="w-4 h-4 text-gray-400" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">PR Board</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+      {/* ── Board ── */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 80px" }}>
 
         {groups.map((g) => {
+          const sc = STATUS_COLOR[g.status];
           const catBreakdown = catOrder
             .map(c => ({ c, n: g.rows.filter(pr => pr.category === c).length }))
             .filter(x => x.n > 0);
 
           return (
-            <div key={g.status} className="mt-4 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className={`bg-gradient-to-r ${HGRAD[g.status]} px-4 py-2.5 flex items-center gap-3`}>
-                <div className="flex items-center gap-2 shrink-0">
-                  <h3 className="text-sm font-bold text-white tracking-wide">{STATUS_LABEL[g.status]}</h3>
-                  <span className="text-xs font-bold text-white bg-white/30 rounded-full px-2.5 py-0.5">{g.rows.length}</span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap flex-1">
-                  {catBreakdown.map(({ c, n }) => (
-                    <span key={c} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-white/85 bg-white/15 rounded-full px-2 py-0.5 whitespace-nowrap">
-                      <Icon name={CAT_ICON[c]} className="w-2.5 h-2.5" />
-                      {CAT_LABEL[c]} {n}
-                    </span>
-                  ))}
-                </div>
+            <div key={g.status} style={{ background: "#fff", border: `1px solid ${sc.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 16, boxShadow: `0 1px 3px ${sc.border}40` }}>
+              {/* group header */}
+              <div style={{ padding: "10px 18px", background: sc.bg, borderBottom: `1px solid ${sc.border}`, display: "flex", alignItems: "center", gap: 10, borderLeft: `4px solid ${sc.text}` }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: sc.text, letterSpacing: "0.01em" }}>{STATUS_LABEL[g.status]}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: sc.text, background: "#fff", border: `1px solid ${sc.border}`, borderRadius: 20, padding: "1px 8px" }}>{g.rows.length}</span>
+                <span style={{ fontSize: 10, color: sc.text, opacity: 0.7 }}>
+                  {catBreakdown.map(({ c, n }) => `${CAT_LABEL[c]} ${n}`).join(" · ")}
+                </span>
               </div>
-              <table className="w-full table-fixed border-collapse text-[11px]">
+
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
                 <colgroup>
                   <col style={{ width: "17%" }} />
                   <col style={{ width: "42%" }} />
@@ -284,11 +283,10 @@ export default async function PRsBoard() {
                   <col style={{ width: "18%" }} />
                 </colgroup>
                 <thead>
-                  <tr className="bg-[#f6f8fa] text-gray-400 text-[11px] text-left">
-                    <th className="pl-3 pr-2 py-2 font-medium align-top">Repo</th>
-                    <th className="px-2.5 py-2 font-medium align-top">Title</th>
-                    <th className="px-2 py-2 font-medium align-top">Issue</th>
-                    <th className="pl-2 pr-3 py-2 font-medium align-top">PR</th>
+                  <tr style={{ background: "#f6f8fa" }}>
+                    {["Repo","Title","Issue","PR"].map(h => (
+                      <th key={h} style={{ textAlign: "left", padding: "7px 14px", fontWeight: 600, color: "#57606a", fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid #d0d7de" }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -303,40 +301,48 @@ export default async function PRsBoard() {
                     const issueUrl = issueMatch ? `https://github.com/${pr.repo}/issues/${issueMatch[1]}` : null;
                     const rt = pr.repoType ?? "app";
                     return (
-                      <tr key={`${pr.repo}-${pr.number}`} className={`border-t border-gray-100 transition-colors ${HOVER[g.status]}`}>
-                        <td className="pl-3 pr-2 py-2 overflow-hidden align-top">
+                      <tr key={`${pr.repo}-${pr.number}`} style={{ borderTop: "1px solid #f0f0f0" }} className={`transition-colors ${HOVER[g.status]}`}>
+                        <td style={{ padding: "9px 14px", overflow: "hidden" }}>
                           <a href={`https://github.com/${pr.repo}`} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1.5 min-w-0 no-underline hover:underline">
                             <OrgAvatar org={org} />
-                            <span className="truncate text-[#1f2328] text-[11px]">{repoName}</span>
+                            <span className="truncate" style={{ color: "#1f2328", fontSize: 11 }}>{repoName}</span>
                           </a>
                         </td>
-                        <td className="px-2.5 py-2 overflow-hidden align-top">
-                          <div className="flex items-center gap-1 min-w-0 group">
-                            <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
-                            <Link href={`/prs/${org}/${repoName}/${pr.number}`}
-                              className="flex-1 min-w-0 truncate text-[#1f2328] hover:text-blue-700 hover:underline no-underline text-[11px]">
-                              {displayTitle}
-                            </Link>
-                            <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                              className="shrink-0 text-blue-700 text-[10px] hover:opacity-70 ml-0.5">&#8599;</a>
+                        <td style={{ padding: "9px 14px", overflow: "hidden" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
+                              <Link href={`/prs/${org}/${repoName}/${pr.number}`}
+                                className="flex-1 min-w-0 truncate hover:text-blue-700 hover:underline no-underline"
+                                style={{ color: "#1f2328", fontSize: 11 }}>
+                                {displayTitle}
+                              </Link>
+                              <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                                style={{ color: "#0969da", fontSize: 10, flexShrink: 0, marginLeft: 2 }}>&#8599;</a>
+                            </div>
+                            {pr.category && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                                {categoryChip(pr.category)}
+                                {issueUrl
+                                  ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#8c959f", fontSize: 9, fontFamily: "ui-monospace,monospace", textDecoration: "none" }}>{pr.issue}</a>
+                                  : pr.issue ? <span style={{ color: "#8c959f", fontSize: 9, fontFamily: "ui-monospace,monospace" }}>{pr.issue}</span> : null}
+                              </div>
+                            )}
                           </div>
                         </td>
-                        <td className="px-2 py-2 overflow-hidden align-top">
-                          <div className="flex flex-col items-start gap-0.5">
-                            {issueUrl
-                              ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline hover:underline text-[10px] font-mono shrink-0 whitespace-nowrap">{pr.issue}</a>
-                              : <span className="text-gray-400 text-[10px] whitespace-nowrap shrink-0">{pr.issue}</span>}
-                            {categoryChip(pr.category)}
-                          </div>
+                        <td style={{ padding: "9px 14px", overflow: "hidden" }}>
+                          {!pr.category && (issueUrl
+                            ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#0969da", fontSize: 10, fontFamily: "ui-monospace,monospace", whiteSpace: "nowrap" }}>{pr.issue}</a>
+                            : <span style={{ color: "#8c959f", fontSize: 10, whiteSpace: "nowrap" }}>{pr.issue}</span>)}
                         </td>
-                        <td className="pl-2 pr-3 py-2 overflow-hidden align-top">
+                        <td style={{ padding: "9px 14px", overflow: "hidden" }}>
                           <div className="flex flex-col items-start gap-0.5">
                             <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                              className="text-blue-700 no-underline hover:underline font-mono text-[11px] shrink-0">
+                              style={{ color: "#0969da", fontFamily: "ui-monospace,monospace", fontSize: 11 }}>
                               #{pr.number}
                             </a>
-                            {dateSlot && <span className="text-[9px] text-gray-400 shrink-0">{dateSlot}</span>}
+                            {dateSlot && <span style={{ fontSize: 9, color: "#8c959f" }}>{dateSlot}</span>}
                           </div>
                         </td>
                       </tr>
@@ -348,9 +354,8 @@ export default async function PRsBoard() {
           );
         })}
 
-        {/* ── Footer ── */}
-        <div className="mt-8 text-center text-xs text-gray-400">
-          {total} submitted &middot; {mergedCount} merged &middot; live from GitHub API &middot; localhost:3018
+        <div style={{ marginTop: 24, textAlign: "center", fontSize: 11, color: "#8c959f" }}>
+          {total} submitted &middot; {mergedCount} merged &middot; live from GitHub API
           {closedCount > 0 && ` · ${closedCount} rejected`}
         </div>
       </div>

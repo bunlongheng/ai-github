@@ -19,3 +19,5 @@
 
 .audit-repo-link { color: #1f2328; text-decoration: none; transition: color 0.15s; }
 .audit-repo-link:hover { color: #0969da; }
+
+.tech-chip:hover { border-color: #0969da !important; }
