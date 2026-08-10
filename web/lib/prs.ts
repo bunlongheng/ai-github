@@ -132,6 +132,13 @@ export function categoryOf(pr: { number: number; title: string; issue: string })
 // The catalog - add new PRs here when submitted
 export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">[] = [
   {
+    number: 1601,
+    repo: "onekey-sec/unblob",
+    title: "Reject zero-length Airoha TLV to avoid extraction hang",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
+  },
+  {
     number: 10465,
     repo: "marimo-team/marimo",
     title: "fix: resolve mo.lazy content eagerly during static HTML export",
