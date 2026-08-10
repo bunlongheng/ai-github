@@ -339,10 +339,15 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
           <>
             {/* files audited */}
             {audit.files_audited.length > 0 && (<Card title="Files Audited" count={audit.files_audited.length} color="purple" style={{ marginBottom: 16 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: "38%" }} />
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "40%" }} />
+                </colgroup>
                 <thead>
                   <tr style={{ background: "#f6f8fa" }}>
-                    {["File", "Role", "Patterns Checked", "Result"].map(h => (
+                    {["File", "Role", "Result"].map(h => (
                       <th key={h} style={{
                         textAlign: "left", padding: "8px 14px",
                         fontWeight: 600, color: "#57606a", fontSize: 10,
@@ -360,10 +365,9 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
                       : "#b45309";
                     return (
                       <tr key={i} style={{ borderTop: i > 0 ? "1px solid #f0f0f0" : undefined }}>
-                        <td style={{ padding: "10px 14px", fontFamily: "ui-monospace,monospace", fontSize: 10, color: "#24292f", wordBreak: "break-all" }}>{f.path}</td>
-                        <td style={{ padding: "10px 14px", color: "#57606a" }}>{f.role}</td>
-                        <td style={{ padding: "10px 14px", color: "#6e7781", fontSize: 10 }}>{f.patterns}</td>
-                        <td style={{ padding: "10px 14px", color: resultColor, fontWeight: 500 }}>{f.result}</td>
+                        <td style={{ padding: "10px 14px", fontFamily: "ui-monospace,monospace", fontSize: 10, color: "#24292f", wordBreak: "break-word", overflow: "hidden" }}>{f.path}</td>
+                        <td style={{ padding: "10px 14px", color: "#57606a", overflow: "hidden" }}>{f.role}</td>
+                        <td style={{ padding: "10px 14px", color: resultColor, fontWeight: 500, overflow: "hidden" }}>{f.result}</td>
                       </tr>
                     );
                   })}
