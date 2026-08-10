@@ -24,8 +24,10 @@ const CAT_GRAD: Record<PRCategory, string> = {
   enhancement: "from-gray-500 to-gray-700",
 };
 const HGRAD: Record<PRStatus, string> = {
-  open: "from-blue-600 to-blue-800", merged: "from-green-600 to-emerald-700",
-  draft: "from-gray-400 to-gray-600", closed: "from-rose-500 to-rose-700",
+  open:   "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+  merged: "linear-gradient(135deg,#22c55e,#15803d)",
+  closed: "linear-gradient(135deg,#f43f5e,#be123c)",
+  draft:  "linear-gradient(135deg,#9ca3af,#6b7280)",
 };
 const HOVER: Record<PRStatus, string> = {
   open: "hover:bg-blue-50", merged: "hover:bg-green-50",
@@ -218,8 +220,8 @@ export default async function PRsBoard() {
     <main style={{ minHeight: "100vh", background: "#f6f8fa", color: "#1f2328", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
 
       {/* ── Hero ── */}
-      <div style={{ background: "linear-gradient(135deg,#fff 0%,#f6f8fa 100%)", borderBottom: "1px solid #d0d7de", padding: "32px 40px 28px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ background: "linear-gradient(135deg,#fff 0%,#f6f8fa 100%)", borderBottom: "1px solid #d0d7de", padding: "32px 0 28px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
             <Image src="/logo.png" alt="AI GitHub Bot" width={44} height={44} style={{ borderRadius: 10 }} unoptimized />
             <div>
@@ -265,14 +267,16 @@ export default async function PRsBoard() {
             .filter(x => x.n > 0);
 
           return (
-            <div key={g.status} style={{ background: "#fff", border: `1px solid ${sc.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 16, boxShadow: `0 1px 3px ${sc.border}40` }}>
+            <div key={g.status} style={{ background: "#fff", border: "1px solid #d0d7de", borderRadius: 12, overflow: "hidden", marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
               {/* group header */}
-              <div style={{ padding: "10px 18px", background: sc.bg, borderBottom: `1px solid ${sc.border}`, display: "flex", alignItems: "center", gap: 10, borderLeft: `4px solid ${sc.text}` }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: sc.text, letterSpacing: "0.01em" }}>{STATUS_LABEL[g.status]}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: sc.text, background: "#fff", border: `1px solid ${sc.border}`, borderRadius: 20, padding: "1px 8px" }}>{g.rows.length}</span>
-                <span style={{ fontSize: 10, color: sc.text, opacity: 0.7 }}>
-                  {catBreakdown.map(({ c, n }) => `${CAT_LABEL[c]} ${n}`).join(" · ")}
-                </span>
+              <div style={{ padding: "11px 18px", background: HGRAD[g.status], display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "0.01em" }}>{STATUS_LABEL[g.status]}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: sc.text, background: "rgba(255,255,255,0.92)", borderRadius: 20, padding: "1px 8px" }}>{g.rows.length}</span>
+                {catBreakdown.length > 0 && (
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>
+                    {catBreakdown.map(({ c, n }) => `${CAT_LABEL[c]} ${n}`).join(" · ")}
+                  </span>
+                )}
               </div>
 
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
@@ -310,31 +314,24 @@ export default async function PRsBoard() {
                           </a>
                         </td>
                         <td style={{ padding: "9px 14px", overflow: "hidden" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                            <div className="flex items-center gap-1 min-w-0">
-                              <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
-                              <Link href={`/prs/${org}/${repoName}/${pr.number}`}
-                                className="flex-1 min-w-0 truncate hover:text-blue-700 hover:underline no-underline"
-                                style={{ color: "#1f2328", fontSize: 11 }}>
-                                {displayTitle}
-                              </Link>
-                              <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                                style={{ color: "#0969da", fontSize: 10, flexShrink: 0, marginLeft: 2 }}>&#8599;</a>
-                            </div>
-                            {pr.category && (
-                              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                                {categoryChip(pr.category)}
-                                {issueUrl
-                                  ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#8c959f", fontSize: 9, fontFamily: "ui-monospace,monospace", textDecoration: "none" }}>{pr.issue}</a>
-                                  : pr.issue ? <span style={{ color: "#8c959f", fontSize: 9, fontFamily: "ui-monospace,monospace" }}>{pr.issue}</span> : null}
-                              </div>
-                            )}
+                          <div className="flex items-center gap-1 min-w-0">
+                            <Icon name={rt} className={`w-3 h-3 shrink-0 mr-0.5 ${TYPE_ICON_CLS[rt]}`} />
+                            <Link href={`/prs/${org}/${repoName}/${pr.number}`}
+                              className="flex-1 min-w-0 truncate hover:text-blue-700 hover:underline no-underline"
+                              style={{ color: "#1f2328", fontSize: 11 }}>
+                              {displayTitle}
+                            </Link>
+                            <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                              style={{ color: "#0969da", fontSize: 10, flexShrink: 0, marginLeft: 2 }}>&#8599;</a>
                           </div>
                         </td>
                         <td style={{ padding: "9px 14px", overflow: "hidden" }}>
-                          {!pr.category && (issueUrl
-                            ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#0969da", fontSize: 10, fontFamily: "ui-monospace,monospace", whiteSpace: "nowrap" }}>{pr.issue}</a>
-                            : <span style={{ color: "#8c959f", fontSize: 10, whiteSpace: "nowrap" }}>{pr.issue}</span>)}
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                            {issueUrl
+                              ? <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#0969da", fontSize: 10, fontFamily: "ui-monospace,monospace", whiteSpace: "nowrap", textDecoration: "none" }}>{pr.issue}</a>
+                              : pr.issue ? <span style={{ color: "#8c959f", fontSize: 10, fontFamily: "ui-monospace,monospace", whiteSpace: "nowrap" }}>{pr.issue}</span> : null}
+                            {categoryChip(pr.category)}
+                          </div>
                         </td>
                         <td style={{ padding: "9px 14px", overflow: "hidden" }}>
                           <div className="flex flex-col items-start gap-0.5">

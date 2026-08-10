@@ -506,14 +506,14 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
 
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-const CARD_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  blue:   { bg: "#eff6ff", border: "#bfdbfe", text: "#1d4ed8" },
-  purple: { bg: "#faf5ff", border: "#e9d5ff", text: "#7c3aed" },
-  amber:  { bg: "#fffbeb", border: "#fde68a", text: "#92400e" },
-  green:  { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
-  teal:   { bg: "#f0fdfa", border: "#99f6e4", text: "#0f766e" },
-  indigo: { bg: "#eef2ff", border: "#c7d2fe", text: "#4338ca" },
-  gray:   { bg: "#f6f8fa", border: "#d0d7de", text: "#57606a" },
+const CARD_COLORS: Record<string, { bg: string; countColor: string }> = {
+  blue:   { bg: "linear-gradient(135deg,#3b82f6,#1d4ed8)", countColor: "#1d4ed8" },
+  purple: { bg: "linear-gradient(135deg,#a78bfa,#7c3aed)", countColor: "#7c3aed" },
+  amber:  { bg: "linear-gradient(135deg,#f59e0b,#b45309)", countColor: "#b45309" },
+  green:  { bg: "linear-gradient(135deg,#22c55e,#15803d)", countColor: "#15803d" },
+  teal:   { bg: "linear-gradient(135deg,#2dd4bf,#0f766e)", countColor: "#0f766e" },
+  indigo: { bg: "linear-gradient(135deg,#818cf8,#4338ca)", countColor: "#4338ca" },
+  gray:   { bg: "linear-gradient(135deg,#9ca3af,#57606a)", countColor: "#57606a" },
 };
 
 function Card({ title, count, children, style, color = "gray" }: {
@@ -523,22 +523,20 @@ function Card({ title, count, children, style, color = "gray" }: {
   const c = CARD_COLORS[color] ?? CARD_COLORS.gray;
   return (
     <div style={{
-      background: "#fff", border: `1px solid ${c.border}`,
+      background: "#fff", border: "1px solid #d0d7de",
       borderRadius: 12, overflow: "hidden",
-      boxShadow: `0 1px 3px ${c.border}40`, ...style
+      boxShadow: "0 1px 4px rgba(0,0,0,0.06)", ...style
     }}>
       <div style={{
-        padding: "10px 18px", background: c.bg,
-        borderBottom: `1px solid ${c.border}`,
-        borderLeft: `4px solid ${c.text}`,
+        padding: "11px 18px", background: c.bg,
         display: "flex", alignItems: "center", gap: 8
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: c.text, letterSpacing: "0.01em" }}>{title}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: "0.01em" }}>{title}</span>
         {count != null && (
           <span style={{
-            fontSize: 10, fontWeight: 600, color: c.text,
-            background: "#fff", border: `1px solid ${c.border}`,
-            borderRadius: 20, padding: "1px 8px"
+            fontSize: 10, fontWeight: 700, color: c.countColor,
+            background: "rgba(255,255,255,0.92)",
+            borderRadius: 20, padding: "1px 9px"
           }}>{count}</span>
         )}
       </div>
