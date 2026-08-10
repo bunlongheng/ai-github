@@ -135,7 +135,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
         {audit && (
           <>
             {/* files audited */}
-            <Card title="Files Audited" count={audit.files_audited.length} style={{ marginBottom: 16 }}>
+            {audit.files_audited.length > 0 && (<Card title="Files Audited" count={audit.files_audited.length} style={{ marginBottom: 16 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                 <thead>
                   <tr style={{ background: "#f6f8fa" }}>
@@ -166,7 +166,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<Para
                   })}
                 </tbody>
               </table>
-            </Card>
+            </Card>)}
 
             {/* tournament */}
             {allFindings.length > 0 && (
