@@ -593,6 +593,13 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     issue: "security-audit",
     submittedAt: "2026-08-09",
   },
+  {
+    number: 2103,
+    repo: "replicatedhq/troubleshoot",
+    title: "Contain support bundle tar extraction within the destination directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-09",
+  },
 ];
 
 async function fetchOnePR(pr: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">): Promise<PR> {
