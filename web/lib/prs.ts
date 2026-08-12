@@ -14,6 +14,7 @@ const REPO_TYPE_MAP: Record<string, RepoType> = {
   "openfrontio/OpenFrontIO":      "game",
   "ill-inc/biomes-game":          "game",
   "benlikescode/geohub":          "game",
+  "TencentCloud/TencentDB-Agent-Memory": "ai",
   "BerriAI/litellm":              "ai",
   "567-labs/instructor":          "ai",
   "mloda-ai/mloda":               "ai",
@@ -131,6 +132,13 @@ export function categoryOf(pr: { number: number; title: string; issue: string })
 
 // The catalog - add new PRs here when submitted
 export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "closedAt" | "url">[] = [
+  {
+    number: 933,
+    repo: "TencentCloud/TencentDB-Agent-Memory",
+    title: "Add a request timeout to the MCP http client",
+    issue: "security-audit",
+    submittedAt: "2026-08-10",
+  },
   {
     number: 1601,
     repo: "onekey-sec/unblob",
@@ -606,6 +614,90 @@ export const PR_CATALOG: Omit<PR, "liveStatus" | "liveTitle" | "mergedAt" | "clo
     title: "Contain support bundle tar extraction within the destination directory",
     issue: "security-audit",
     submittedAt: "2026-08-09",
+  },
+  {
+    number: 341,
+    repo: "firecrawl/pdf-inspector",
+    title: "Validate the CIDSystemInfo ordering before using it as a bcmap file name",
+    issue: "security-audit",
+    submittedAt: "2026-08-10",
+  },
+  {
+    number: 39593,
+    repo: "langchain-ai/langchain",
+    title: "fix(langchain): bound email PII detector regex to prevent ReDoS",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 727,
+    repo: "charmbracelet/lipgloss",
+    title: "fix(table): prevent panic when YOffset is set to a negative value",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 2237,
+    repo: "gitleaks/gitleaks",
+    title: "fix: prevent CSV formula injection in csv report output",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 4189,
+    repo: "ml-explore/mlx",
+    title: "fix: shell-quote the working directory in the distributed launch script",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 34731,
+    repo: "scikit-learn/scikit-learn",
+    title: "fix: set timeout on OpenML urlopen calls to avoid indefinite hangs",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 121769,
+    repo: "getsentry/sentry",
+    title: "fix(jira): add request timeout when fetching Connect install public key",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 84238,
+    repo: "airbytehq/airbyte",
+    title: "fix: add timeout to Zoho CRM OAuth token refresh request",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 8265,
+    repo: "Flagsmith/flagsmith",
+    title: "fix: add request timeouts to analytics integration wrappers",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 2477,
+    repo: "wger-project/wger",
+    title: "fix: add request timeout to paginated fetch helpers",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 4669,
+    repo: "bottlesdevs/Bottles",
+    title: "fix: add timeout to urlopen calls to prevent UI freeze",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
+  },
+  {
+    number: 5070,
+    repo: "Dokploy/dokploy",
+    title: "fix: confine Traefik file read/write to the Traefik config directory",
+    issue: "security-audit",
+    submittedAt: "2026-08-11",
   },
 ];
 
